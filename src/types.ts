@@ -2,6 +2,19 @@ export interface Team {
   id: string;
   name: string;
   logo: string;
+}
+
+export interface League {
+  id: string;
+  name: string;
+  year: number;
+  isActive: boolean;
+}
+
+export interface LeagueTeam {
+  id: string;
+  leagueId: string;
+  teamId: string;
   played: number;
   won: number;
   drawn: number;
@@ -9,12 +22,6 @@ export interface Team {
   goalsFor: number;
   goalsAgainst: number;
   points: number;
-}
-
-export interface League {
-  id: string;
-  name: string;
-  teams: string[];
 }
 
 export interface Location {
@@ -33,5 +40,5 @@ export interface Match {
   date: string | null;
   homeScore: number | null;
   awayScore: number | null;
-  status: 'scheduled' | 'completed';
+  status: "scheduled" | "completed";
 }

@@ -10,7 +10,7 @@ interface MatchWeeksProps {
 }
 
 export function MatchWeeks({ leagueId, onBack }: MatchWeeksProps) {
-  const { leagues, matches, generateLeagueFixtures, clearLeagueFixtures } = useStore();
+  const { leagues, matches, generateLeagueFixtures, clearLeagueFixtures, leagueTeams } = useStore();
   const league = leagues.find(l => l.id === leagueId);
   
   if (!league) return null;
@@ -21,7 +21,8 @@ export function MatchWeeks({ leagueId, onBack }: MatchWeeksProps) {
   ).sort((a, b) => a - b);
 
   const handleGenerateFixtures = () => {
-    if (league.teams.length < 2) {
+    const teamCount = leagueTeams.filter(lt => lt.leagueId === leagueId).length;
+    if (teamCount < 2) {
       toast.error('Need at least 2 teams to generate fixtures');
       return;
     }
@@ -31,7 +32,8 @@ export function MatchWeeks({ leagueId, onBack }: MatchWeeksProps) {
   };
 
   const handleRegenerateFixtures = () => {
-    if (league.teams.length < 2) {
+    const teamCount = leagueTeams.filter(lt => lt.leagueId === leagueId).length;
+    if (teamCount < 2) {
       toast.error('Need at least 2 teams to generate fixtures');
       return;
     }

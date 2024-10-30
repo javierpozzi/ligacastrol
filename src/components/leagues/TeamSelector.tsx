@@ -10,13 +10,19 @@ interface TeamSelectorProps {
 
 export function TeamSelector({ selectedTeams, onTeamsChange, currentLeagueId }: TeamSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const { teams, leagues } = useStore();
+  const { teams, leagues, leagueTeams } = useStore();
 
   const getTeamLeague = (teamId: string) => {
-    const league = leagues.find(l => 
-      l.id !== currentLeagueId && l.teams.includes(teamId)
+    const activeLeagueTeam = leagueTeams.find(lt => 
+      lt.leagueId !== currentLeagueId && 
+      leagues.find(l => l.id === lt.leagueId)?.isActive && 
+      lt.teamId === teamId
     );
-    return league;
+    
+    if (activeLeagueTeam) {
+      return leagues.find(l => l.id === activeLeagueTeam.leagueId);
+    }
+    return null;
   };
 
   const filteredTeams = teams.filter(team =>

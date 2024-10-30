@@ -6,11 +6,11 @@ interface LeagueTableProps {
 }
 
 export function LeagueTable({ leagueId }: LeagueTableProps) {
-  const { teams, leagues } = useStore();
-  const league = leagues.find(l => l.id === leagueId);
-  const leagueTeams = teams.filter(team => league?.teams.includes(team.id));
-
-  const sortedTeams = [...leagueTeams].sort((a, b) => {
+  const { teams, leagueTeams } = useStore();
+  
+  const leagueTeamStats = leagueTeams.filter(lt => lt.leagueId === leagueId);
+  
+  const sortedTeams = [...leagueTeamStats].sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
     const aGD = a.goalsFor - a.goalsAgainst;
     const bGD = b.goalsFor - b.goalsAgainst;
@@ -36,29 +36,34 @@ export function LeagueTable({ leagueId }: LeagueTableProps) {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {sortedTeams.map((team, index) => (
-            <tr key={team.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center">
-                  <img className="h-8 w-8 rounded-full" src={team.logo} alt={team.name} />
-                  <div className="ml-4">
-                    <div className="text-sm font-medium text-gray-900">{team.name}</div>
+          {sortedTeams.map((leagueTeam, index) => {
+            const team = teams.find(t => t.id === leagueTeam.teamId);
+            if (!team) return null;
+
+            return (
+              <tr key={leagueTeam.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <img className="h-8 w-8 rounded-full" src={team.logo} alt={team.name} />
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">{team.name}</div>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{team.played}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{team.won}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{team.drawn}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{team.lost}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{team.goalsFor}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{team.goalsAgainst}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
-                {team.goalsFor - team.goalsAgainst}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-semibold">{team.points}</td>
-            </tr>
-          ))}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{leagueTeam.played}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{leagueTeam.won}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{leagueTeam.drawn}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{leagueTeam.lost}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{leagueTeam.goalsFor}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{leagueTeam.goalsAgainst}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
+                  {leagueTeam.goalsFor - leagueTeam.goalsAgainst}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-semibold">{leagueTeam.points}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

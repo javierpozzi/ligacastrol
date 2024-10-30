@@ -9,10 +9,10 @@ import { MatchWeeks } from "./MatchWeeks";
 
 export function LeagueList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingLeague, setEditingLeague] = useState<null | { id: string; name: string; teams: string[] }>(null);
+  const [editingLeague, setEditingLeague] = useState<null | { id: string; name: string; year: number; isActive: boolean }>(null);
   const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
   const [selectedView, setSelectedView] = useState<"fixtures" | "table" | null>(null);
-  const { leagues, matches, deleteLeague } = useStore();
+  const { leagues, matches, deleteLeague, leagueTeams } = useStore();
 
   const handleDelete = (leagueId: string) => {
     const leagueHasMatches = matches.some((match) => match.leagueId === leagueId);
@@ -24,7 +24,7 @@ export function LeagueList() {
     toast.success("League deleted successfully");
   };
 
-  const handleEdit = (league: { id: string; name: string; teams: string[] }) => {
+  const handleEdit = (league: { id: string; name: string; year: number; isActive: boolean }) => {
     setEditingLeague(league);
     setIsModalOpen(true);
   };
@@ -95,48 +95,59 @@ export function LeagueList() {
             )
           ) : (
             <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {leagues.map((league) => (
-                <div key={league.id} className="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
-                  <div className="px-4 py-5 sm:p-6">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-900">{league.name}</h3>
-                        <p className="mt-1 text-sm text-gray-500">{league.teams.length} teams</p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleViewTable(league.id)}
-                          className="p-2 text-gray-400 hover:text-gray-500"
-                          title="View Table"
-                        >
-                          <Table className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleManageFixtures(league.id)}
-                          className="p-2 text-gray-400 hover:text-gray-500"
-                          title="Manage Fixtures"
-                        >
-                          <Calendar className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(league)}
-                          className="p-2 text-gray-400 hover:text-gray-500"
-                          title="Edit League"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(league.id)}
-                          className="p-2 text-gray-400 hover:text-red-500"
-                          title="Delete League"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+              {leagues.map((league) => {
+                const teamCount = leagueTeams.filter(lt => lt.leagueId === league.id).length;
+                
+                return (
+                  <div key={league.id} className="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
+                    <div className="px-4 py-5 sm:p-6">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-lg font-medium text-gray-900">{league.name}</h3>
+                          <p className="mt-1 text-sm text-gray-500">
+                            {teamCount} teams · {league.year}
+                            {league.isActive && (
+                              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Active
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleViewTable(league.id)}
+                            className="p-2 text-gray-400 hover:text-gray-500"
+                            title="View Table"
+                          >
+                            <Table className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleManageFixtures(league.id)}
+                            className="p-2 text-gray-400 hover:text-gray-500"
+                            title="Manage Fixtures"
+                          >
+                            <Calendar className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(league)}
+                            className="p-2 text-gray-400 hover:text-gray-500"
+                            title="Edit League"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(league.id)}
+                            className="p-2 text-gray-400 hover:text-red-500"
+                            title="Delete League"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -147,7 +158,7 @@ export function LeagueList() {
         onClose={handleCloseModal}
         title={editingLeague ? "Edit League" : "Create New League"}
       >
-        <LeagueForm onClose={handleCloseModal} initialData={editingLeague ?? undefined} />
+        <LeagueForm onClose={handleCloseModal} initialData={editingLeague} />
       </Modal>
     </div>
   );
