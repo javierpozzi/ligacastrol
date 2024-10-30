@@ -32,151 +32,16 @@ interface Store {
   ) => void;
 }
 
-const initialState = {
-  teams: [
-    { id: "1", name: "Real Madrid", logo: "/teams/real-madrid.png" },
-    { id: "2", name: "Barcelona", logo: "/teams/barcelona.png" },
-    { id: "3", name: "Atletico Madrid", logo: "/teams/atletico-madrid.png" },
-    { id: "4", name: "Sevilla", logo: "/teams/sevilla.png" },
-  ],
-  leagues: [
-    { id: "1", name: "La Liga 2024", year: 2024, isActive: true },
-    { id: "2", name: "La Liga 2023", year: 2023, isActive: false },
-  ],
-  leagueTeams: [
-    // La Liga 2024 teams
-    {
-      id: "lt1",
-      leagueId: "1",
-      teamId: "1",
-      played: 3,
-      won: 2,
-      drawn: 1,
-      lost: 0,
-      goalsFor: 7,
-      goalsAgainst: 2,
-      points: 7,
-    },
-    {
-      id: "lt2",
-      leagueId: "1",
-      teamId: "2",
-      played: 3,
-      won: 2,
-      drawn: 0,
-      lost: 1,
-      goalsFor: 6,
-      goalsAgainst: 3,
-      points: 6,
-    },
-    {
-      id: "lt3",
-      leagueId: "1",
-      teamId: "3",
-      played: 3,
-      won: 1,
-      drawn: 1,
-      lost: 1,
-      goalsFor: 4,
-      goalsAgainst: 4,
-      points: 4,
-    },
-    {
-      id: "lt4",
-      leagueId: "1",
-      teamId: "4",
-      played: 3,
-      won: 0,
-      drawn: 0,
-      lost: 3,
-      goalsFor: 1,
-      goalsAgainst: 9,
-      points: 0,
-    },
-    // La Liga 2023 teams (different stats)
-    {
-      id: "lt5",
-      leagueId: "2",
-      teamId: "1",
-      played: 38,
-      won: 27,
-      drawn: 6,
-      lost: 5,
-      goalsFor: 80,
-      goalsAgainst: 30,
-      points: 87,
-    },
-    {
-      id: "lt6",
-      leagueId: "2",
-      teamId: "2",
-      played: 38,
-      won: 25,
-      drawn: 8,
-      lost: 5,
-      goalsFor: 75,
-      goalsAgainst: 35,
-      points: 83,
-    },
-  ],
-  locations: [
-    { id: "1", name: "Santiago Bernabéu", address: "Av. de Concha Espina, 1, 28036 Madrid" },
-    { id: "2", name: "Camp Nou", address: "C. d'Arístides Maillol, 12, 08028 Barcelona" },
-  ],
-  matches: [
-    {
-      id: "1",
-      homeTeamId: "1",
-      awayTeamId: "2",
-      leagueId: "1",
-      locationId: "1",
-      weekNumber: 1,
-      date: "2024-01-14",
-      homeScore: 3,
-      awayScore: 1,
-      status: "completed",
-    },
-    {
-      id: "2",
-      homeTeamId: "3",
-      awayTeamId: "4",
-      leagueId: "1",
-      locationId: null,
-      weekNumber: 1,
-      date: "2024-01-14",
-      homeScore: 2,
-      awayScore: 0,
-      status: "completed",
-    },
-    {
-      id: "3",
-      homeTeamId: "1",
-      awayTeamId: "3",
-      leagueId: "1",
-      locationId: "1",
-      weekNumber: 2,
-      date: "2024-01-21",
-      homeScore: 2,
-      awayScore: 2,
-      status: "completed",
-    },
-    {
-      id: "4",
-      homeTeamId: "2",
-      awayTeamId: "4",
-      leagueId: "1",
-      locationId: "2",
-      weekNumber: 2,
-      date: "2024-01-21",
-      homeScore: 3,
-      awayScore: 0,
-      status: "completed",
-    },
-  ],
+const emptyState = {
+  teams: [],
+  leagues: [],
+  leagueTeams: [],
+  locations: [],
+  matches: [],
 };
 
 export const useStore = create<Store>((set, get) => ({
-  ...initialState,
+  ...emptyState,
 
   addTeam: (team) => {
     const id = crypto.randomUUID();
@@ -362,13 +227,7 @@ export const useStore = create<Store>((set, get) => ({
 
   updateTeamStats: () => set((state) => state),
 
-  clearStore: () =>
-    set(() => ({
-      teams: [],
-      leagues: [],
-      locations: [],
-      matches: [],
-    })),
+  clearStore: () => set(emptyState),
 
   addTeamToLeague: (leagueId, teamId) => {
     const id = crypto.randomUUID();

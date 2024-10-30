@@ -4,6 +4,8 @@ import { useStore } from '../store';
 import { Edit2 } from 'lucide-react';
 import { Modal } from './shared/Modal';
 import { MatchEditor } from './leagues/MatchEditor';
+import { WeekScheduler } from './leagues/WeekScheduler';
+import { Calendar } from 'lucide-react';
 
 interface FixtureListProps {
   leagueId: string;
@@ -12,6 +14,7 @@ interface FixtureListProps {
 
 export function FixtureList({ leagueId, weekNumber }: FixtureListProps) {
   const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
+  const [isSchedulerOpen, setIsSchedulerOpen] = useState(false);
   const { matches, teams, locations } = useStore();
 
   const weekMatches = matches.filter(
@@ -20,7 +23,17 @@ export function FixtureList({ leagueId, weekNumber }: FixtureListProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">Week {weekNumber}</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-900">Week {weekNumber}</h3>
+        <button
+          onClick={() => setIsSchedulerOpen(true)}
+          className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+        >
+          <Calendar className="w-4 h-4 mr-2" />
+          Schedule Week
+        </button>
+      </div>
+
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
         <ul className="divide-y divide-gray-200">
           {weekMatches.map(match => {
@@ -84,6 +97,18 @@ export function FixtureList({ leagueId, weekNumber }: FixtureListProps) {
             onClose={() => setEditingMatchId(null)}
           />
         )}
+      </Modal>
+
+      <Modal
+        isOpen={isSchedulerOpen}
+        onClose={() => setIsSchedulerOpen(false)}
+        title={`Schedule Week ${weekNumber} Matches`}
+      >
+        <WeekScheduler
+          leagueId={leagueId}
+          weekNumber={weekNumber}
+          onClose={() => setIsSchedulerOpen(false)}
+        />
       </Modal>
     </div>
   );

@@ -13,11 +13,11 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { 
     addTeam, 
-    addLeague, 
-    addLocation, 
+    addLeague,
+    addLocation,
+    addTeamToLeague,
     generateLeagueFixtures, 
     updateMatch,
-    matches,
     clearStore
   } = useStore();
 
@@ -25,46 +25,72 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
     // Clear existing data first
     clearStore();
 
-    // Add teams - we need 59 teams in total (20 + 20 + 19)
-    const teamNames = [
-      // Primera División (1-20)
+    // Add locations first
+    const locations = [
+      { name: 'Estadio Santiago Bernabéu', address: 'Av. de Concha Espina, 1, Madrid' },
+      { name: 'Camp Nou', address: 'C. d\'Arístides Maillol, 12, Barcelona' },
+      { name: 'Estadio Metropolitano', address: 'Av. de Luis Aragonés, 4, Madrid' },
+      { name: 'Estadio Ramón Sánchez Pizjuán', address: 'C. Sevilla Fútbol Club, Sevilla' },
+      { name: 'Estadio de Mestalla', address: 'Av. de Suècia, València' }
+    ];
+
+    const locationIds = locations.map(location => {
+      const { id } = addLocation(location);
+      return id;
+    });
+
+    // Split teams into divisions
+    const primeraTeams = [
       'Real Madrid', 'Barcelona', 'Atletico Madrid', 'Sevilla', 'Valencia',
       'Villarreal', 'Athletic Bilbao', 'Real Sociedad', 'Real Betis', 'Getafe',
       'Osasuna', 'Granada', 'Levante', 'Celta Vigo', 'Alaves',
-      'Espanyol', 'Mallorca', 'Cadiz', 'Elche', 'Rayo Vallecano',
-      // Segunda División (21-40)
+      'Espanyol', 'Mallorca', 'Cadiz', 'Elche', 'Rayo Vallecano'
+    ];
+
+    const segundaTeams = [
       'Real Zaragoza', 'Sporting Gijon', 'Real Oviedo', 'Racing Santander', 'Tenerife',
       'Las Palmas', 'Malaga', 'Albacete', 'Burgos CF', 'Cartagena',
       'Eibar', 'Leganes', 'Mirandes', 'Ponferradina', 'Real Valladolid',
-      'SD Huesca', 'Alcorcon', 'Fuenlabrada', 'Lugo', 'Almeria',
-      // Tercera División (41-59)
-      'Deportivo La Coruna', 'Numancia', 'Hercules', 'Racing Ferrol', 'Badajoz',
-      'Cultural Leonesa', 'SD Logrones', 'Unionistas', 'Cornella', 'Sabadell',
-      'Atletico Baleares', 'UCAM Murcia', 'Linares', 'San Fernando', 'Algeciras',
-      'Real Madrid Castilla', 'Barcelona B', 'Atletico Madrid B', 'Sevilla Atletico'
+      'SD Huesca', 'Alcorcon', 'Fuenlabrada', 'Lugo', 'Almeria'
     ];
 
-    const teams = teamNames.map(name => ({
-      name,
-      logo: `https://source.unsplash.com/100x100/?${name.toLowerCase().split(' ')[0]},football`,
-    }));
+    // Create teams and store IDs by division
+    const primeraTeamIds = primeraTeams.map(name => {
+      const { id } = addTeam({
+        name,
+        logo: `https://source.unsplash.com/100x100/?${name.toLowerCase().split(' ')[0]},football`,
+      });
+      return id;
+    });
 
-    const teamIds = teams.map(team => {
-      const { id } = addTeam(team);
+    const segundaTeamIds = segundaTeams.map(name => {
+      const { id } = addTeam({
+        name,
+        logo: `https://source.unsplash.com/100x100/?${name.toLowerCase().split(' ')[0]},football`,
+      });
       return id;
     });
 
     // Add leagues with specific team distributions
     const leagueConfigs = [
-      { name: 'Primera División', teamCount: 20, playedWeeks: 5 },
-      { name: 'Segunda División', teamCount: 20, playedWeeks: 0 },
-      { name: 'Tercera División', teamCount: 19, playedWeeks: 5 }
+      { name: 'Primera División', year: 2024, teamIds: primeraTeamIds, playedWeeks: 38, isActive: true },
+      { name: 'Primera División', year: 2023, teamIds: primeraTeamIds, playedWeeks: 38, isActive: false },
+      { name: 'Segunda División', year: 2024, teamIds: segundaTeamIds, playedWeeks: 19, isActive: true },
+      { name: 'Segunda División', year: 2023, teamIds: segundaTeamIds, playedWeeks: 38, isActive: false },
     ];
     
-    let currentTeamIndex = 0;
-    leagueConfigs.forEach(({ name, teamCount, playedWeeks }) => {
-      const leagueTeams = teamIds.slice(currentTeamIndex, currentTeamIndex + teamCount);
-      const { id: leagueId } = addLeague({ name, teams: leagueTeams });
+    leagueConfigs.forEach(({ name, year, teamIds, playedWeeks, isActive }) => {
+      // Add league
+      const { id: leagueId } = addLeague({ 
+        name, 
+        year,
+        isActive
+      });
+
+      // Add teams to league
+      teamIds.forEach(teamId => {
+        addTeamToLeague(leagueId, teamId);
+      });
       
       // Generate fixtures first
       generateLeagueFixtures(leagueId);
@@ -79,33 +105,23 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
           weekMatches.forEach(match => {
             const homeScore = Math.floor(Math.random() * 5);
             const awayScore = Math.floor(Math.random() * 5);
+            const randomLocationId = locationIds[Math.floor(Math.random() * locationIds.length)];
+            const matchDate = new Date(year, 7 + Math.floor(week / 4), 1 + (week % 4) * 7);
+            matchDate.setHours(Math.random() > 0.5 ? 16 : 20);
             
             updateMatch(match.id, {
               homeScore,
               awayScore,
-              status: 'completed'
+              status: 'completed',
+              locationId: randomLocationId,
+              date: matchDate.toISOString()
             });
           });
         }
       }
-      
-      currentTeamIndex += teamCount;
     });
 
-    // Add locations
-    const locations = [
-      { name: 'Estadio Santiago Bernabéu', address: 'Av. de Concha Espina, 1, Madrid' },
-      { name: 'Camp Nou', address: 'C. d\'Arístides Maillol, 12, Barcelona' },
-      { name: 'Estadio Metropolitano', address: 'Av. de Luis Aragonés, 4, Madrid' },
-      { name: 'Estadio Ramón Sánchez Pizjuán', address: 'C. Sevilla Fútbol Club, Sevilla' },
-      { name: 'Estadio de Mestalla', address: 'Av. de Suècia, València' }
-    ];
-
-    locations.forEach(location => {
-      addLocation(location);
-    });
-
-    toast.success('Demo data populated successfully');
+    toast.success('Demo data loaded successfully');
   };
 
   return (
