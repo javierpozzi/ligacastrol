@@ -7,6 +7,7 @@ import { LeagueTable } from '../components/leagues/LeagueTable';
 import { TeamList } from '../components/teams/TeamList';
 import { LocationList } from '../components/locations/LocationList';
 import { NotFound } from '../components/NotFound';
+import { TeamDetails } from '../components/teams/TeamDetails';
 
 export const router = createBrowserRouter([
   {
@@ -36,6 +37,10 @@ export const router = createBrowserRouter([
       {
         path: '/league/:leagueId/standings',
         element: <LeagueTable />,
+      },
+      {
+        path: '/teams/:teamId',
+        element: <TeamDetails />,
       },
       {
         path: '*',
