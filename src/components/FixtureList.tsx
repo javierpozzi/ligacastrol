@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { useStore } from '../store';
+import { Edit2 } from 'lucide-react';
+import { Modal } from './shared/Modal';
+import { MatchEditor } from './leagues/MatchEditor';
 
 interface FixtureListProps {
   leagueId: string;
@@ -8,6 +11,7 @@ interface FixtureListProps {
 }
 
 export function FixtureList({ leagueId, weekNumber }: FixtureListProps) {
+  const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
   const { matches, teams, locations } = useStore();
 
   const weekMatches = matches.filter(
@@ -39,13 +43,21 @@ export function FixtureList({ leagueId, weekNumber }: FixtureListProps) {
                         <span className="ml-2 font-medium">{awayTeam?.name}</span>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-500 mt-2 md:mt-0">
-                      {match.date && (
-                        <div>{format(new Date(match.date), 'PPp')}</div>
-                      )}
-                      {location && (
-                        <div className="md:text-right">{location.name}</div>
-                      )}
+                    <div className="flex items-center space-x-4">
+                      <div className="text-sm text-gray-500 mt-2 md:mt-0">
+                        {match.date && (
+                          <div>{format(new Date(match.date), 'PPp')}</div>
+                        )}
+                        {location && (
+                          <div className="md:text-right">{location.name}</div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setEditingMatchId(match.id)}
+                        className="p-2 text-gray-400 hover:text-gray-500"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -54,6 +66,19 @@ export function FixtureList({ leagueId, weekNumber }: FixtureListProps) {
           })}
         </ul>
       </div>
+
+      <Modal
+        isOpen={!!editingMatchId}
+        onClose={() => setEditingMatchId(null)}
+        title="Edit Match Details"
+      >
+        {editingMatchId && (
+          <MatchEditor
+            matchId={editingMatchId}
+            onClose={() => setEditingMatchId(null)}
+          />
+        )}
+      </Modal>
     </div>
   );
 }

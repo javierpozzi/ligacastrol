@@ -2,6 +2,7 @@ import React from 'react';
 import { useStore } from '../../store';
 import { ArrowLeft, PlusCircle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { FixtureList } from '../FixtureList';
 
 interface MatchWeeksProps {
   leagueId: string;
@@ -40,10 +41,6 @@ export function MatchWeeks({ leagueId, onBack }: MatchWeeksProps) {
     toast.success('Fixtures regenerated successfully');
   };
 
-  const getTeamName = (teamId: string) => {
-    return teams.find(t => t.id === teamId)?.name || 'Unknown Team';
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -75,46 +72,15 @@ export function MatchWeeks({ leagueId, onBack }: MatchWeeksProps) {
         )}
       </div>
 
-      {leagueMatches.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg shadow">
-          <div className="mx-auto h-12 w-12 text-gray-400">📅</div>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No fixtures</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Generate fixtures to create the match schedule.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {weekNumbers.map(weekNumber => (
-            <div key={weekNumber} className="bg-white shadow rounded-lg overflow-hidden">
-              <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900">
-                  Week {weekNumber}
-                </h3>
-              </div>
-              <ul className="divide-y divide-gray-200">
-                {leagueMatches
-                  .filter(match => match.weekNumber === weekNumber)
-                  .map(match => (
-                    <li key={match.id} className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <span className="text-sm font-medium text-gray-900">
-                            {getTeamName(match.homeTeamId)}
-                          </span>
-                          <span className="text-sm text-gray-500">vs</span>
-                          <span className="text-sm font-medium text-gray-900">
-                            {getTeamName(match.awayTeamId)}
-                          </span>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="space-y-8">
+        {weekNumbers.map(weekNumber => (
+          <FixtureList
+            key={weekNumber}
+            leagueId={leagueId}
+            weekNumber={weekNumber}
+          />
+        ))}
+      </div>
     </div>
   );
 }
