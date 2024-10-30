@@ -6,14 +6,11 @@ import { RepositoryFactory } from "../../repositories/factory";
 import { Modal } from "../shared/Modal";
 import { TeamForm } from "./TeamForm";
 import { useNavigate } from 'react-router-dom';
+import { Team } from "../../types";
 
 export function TeamList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTeam, setEditingTeam] = useState<null | {
-    id: string;
-    name: string;
-    logo: string;
-  }>(null);
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
 
   const { teams, loading, error, reloadTeams } = useTeams();
   const navigate = useNavigate();
@@ -32,7 +29,7 @@ export function TeamList() {
     }
   };
 
-  const handleEdit = (team: { id: string; name: string; logo: string }) => {
+  const handleEdit = (team: Team) => {
     setEditingTeam(team);
     setIsModalOpen(true);
   };

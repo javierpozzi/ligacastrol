@@ -1,7 +1,14 @@
+export interface TeamPreferences {
+  preferredLocationIds: string[];
+  preferredStartHour: number;
+  preferredEndHour: number;
+}
+
 export interface Team {
   id: string;
   name: string;
   logo: string;
+  preferences: TeamPreferences;
 }
 
 export interface League {

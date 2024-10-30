@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { RepositoryFactory } from "../../repositories/factory";
 import { Location, Match } from "../../types";
+import { useStore } from "../../store";
+import { scheduleMatches } from "../../utils/scheduler";
 
 interface WeekSchedulerProps {
   leagueId: string;
@@ -19,6 +21,7 @@ export function WeekScheduler({ leagueId, weekNumber, onClose }: WeekSchedulerPr
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
+  const { teams } = useStore();
 
   // Load matches and locations
   useEffect(() => {
@@ -49,34 +52,28 @@ export function WeekScheduler({ leagueId, weekNumber, onClose }: WeekSchedulerPr
       return;
     }
 
-    // Calculate available time slots
-    const availableSlots: { time: Date; locationId: string }[] = [];
-    const durationInMs = matchDuration * 60 * 1000; // Convert minutes to milliseconds
+    const selectedLocations = locations.filter(loc => selectedLocationIds.includes(loc.id));
+    const matchDurationMs = matchDuration * 60 * 1000;
 
-    selectedLocationIds.forEach((locationId) => {
-      let currentTime = startDateTime;
-      while (currentTime <= endDateTime) {
-        availableSlots.push({
-          time: new Date(currentTime),
-          locationId,
-        });
-        currentTime = new Date(currentTime.getTime() + durationInMs);
-      }
-    });
+    const result = scheduleMatches(
+      matches,
+      teams,
+      selectedLocations,
+      startDateTime,
+      endDateTime,
+      matchDurationMs
+    );
 
-    if (availableSlots.length < matches.length) {
-      toast.error("Not enough time slots available for all matches");
+    if (!result.success) {
+      toast.error("Unable to schedule all matches within the given constraints");
       return;
     }
 
-    // Shuffle available slots to randomize assignment
-    const shuffledSlots = [...availableSlots].sort(() => Math.random() - 0.5);
-
     try {
-      // Assign matches to time slots
+      // Update matches with the scheduled times and locations
       await Promise.all(
-        matches.map((match, index) => {
-          const slot = shuffledSlots[index];
+        matches.map(match => {
+          const slot = result.schedule.get(match.id)!;
           return matchService.updateMatch(match.id, {
             date: slot.time.toISOString(),
             locationId: slot.locationId,
@@ -84,7 +81,26 @@ export function WeekScheduler({ leagueId, weekNumber, onClose }: WeekSchedulerPr
         })
       );
 
-      toast.success("Match schedule generated successfully");
+      if (result.violations.length > 0) {
+        const violationMessages = result.violations.map(v => {
+          const team = teams.find(t => t.id === v.teamId)!;
+          return `${team.name}: ${v.type} preference not met`;
+        });
+        toast.success(
+          <div>
+            <div>Schedule generated with some compromises:</div>
+            <ul className="mt-2 text-sm">
+              {violationMessages.map((msg, i) => (
+                <li key={i}>• {msg}</li>
+              ))}
+            </ul>
+          </div>,
+          { duration: 5000 }
+        );
+      } else {
+        toast.success("Match schedule generated successfully");
+      }
+      
       onClose();
     } catch (error) {
       toast.error("Failed to update match schedule");

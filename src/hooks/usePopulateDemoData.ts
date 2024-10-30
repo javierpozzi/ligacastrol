@@ -10,49 +10,186 @@ export function usePopulateDemoData() {
 
   const populateDemoData = useCallback(async () => {
     try {
-      // Clear existing data
-      // Note: We should add clear methods to services
-
-      // Add Premier League teams
-      const premierLeagueTeams = [
-        { name: "Manchester United", logo: "https://resources.premierleague.com/premierleague/badges/t1.svg" },
-        { name: "Liverpool", logo: "https://resources.premierleague.com/premierleague/badges/t14.svg" },
-        { name: "Chelsea", logo: "https://resources.premierleague.com/premierleague/badges/t8.svg" },
-        { name: "Arsenal", logo: "https://resources.premierleague.com/premierleague/badges/t3.svg" },
-        { name: "Manchester City", logo: "https://resources.premierleague.com/premierleague/badges/t43.svg" },
-        { name: "Tottenham", logo: "https://resources.premierleague.com/premierleague/badges/t6.svg" },
-        { name: "Newcastle", logo: "https://resources.premierleague.com/premierleague/badges/t4.svg" },
-        { name: "West Ham", logo: "https://resources.premierleague.com/premierleague/badges/t21.svg" },
-        { name: "Leicester", logo: "https://resources.premierleague.com/premierleague/badges/t13.svg" },
-        { name: "Everton", logo: "https://resources.premierleague.com/premierleague/badges/t11.svg" },
-      ];
-
-      // Add Championship teams
-      const championshipTeams = [
-        { name: "Leeds United", logo: "https://resources.premierleague.com/premierleague/badges/t2.svg" },
-        { name: "Norwich City", logo: "https://resources.premierleague.com/premierleague/badges/t45.svg" },
-        { name: "Watford", logo: "https://resources.premierleague.com/premierleague/badges/t57.svg" },
-        { name: "Southampton", logo: "https://resources.premierleague.com/premierleague/badges/t20.svg" },
-        { name: "Sheffield United", logo: "https://resources.premierleague.com/premierleague/badges/t49.svg" },
-        { name: "Burnley", logo: "https://resources.premierleague.com/premierleague/badges/t90.svg" },
-        { name: "Middlesbrough", logo: "https://resources.premierleague.com/premierleague/badges/t91.svg" },
-        { name: "West Bromwich", logo: "https://resources.premierleague.com/premierleague/badges/t35.svg" },
-        { name: "Stoke City", logo: "https://resources.premierleague.com/premierleague/badges/t110.svg" },
-        { name: "Swansea City", logo: "https://resources.premierleague.com/premierleague/badges/t80.svg" },
-      ];
-
-      // Add locations
+      // First create locations
       const locationConfigs = [
-        { name: "Old Trafford", address: "Sir Matt Busby Way, Manchester M16 0RA" },
-        { name: "Anfield", address: "Anfield Road, Liverpool L4 0TH" },
-        { name: "Stamford Bridge", address: "Fulham Road, London SW6 1HS" },
-        { name: "Emirates Stadium", address: "Hornsey Rd, London N7 7AJ" },
-        { name: "Etihad Stadium", address: "Ashton New Road, Manchester M11 3FF" },
-        { name: "Tottenham Hotspur Stadium", address: "782 High Rd, London N17 0BX" },
-        { name: "St James' Park", address: "St. James' Park, Newcastle upon Tyne NE1 4ST" },
-        { name: "London Stadium", address: "London E20 2ST" },
-        { name: "King Power Stadium", address: "Filbert Way, Leicester LE2 7FL" },
-        { name: "Goodison Park", address: "Goodison Road, Liverpool L4 4EL" },
+        { name: "Main Stadium", address: "123 Main St" },
+        { name: "Community Field", address: "456 Park Ave" },
+        { name: "Training Ground", address: "789 Sports Blvd" },
+        { name: "City Arena", address: "321 City Road" },
+        { name: "Sports Complex", address: "654 Complex Ave" },
+      ];
+
+      const locationIds = await Promise.all(
+        locationConfigs.map((location) => locationService.createLocation(location).then((l) => l.id))
+      );
+
+      // Create teams with preferences
+      const premierLeagueTeams = [
+        {
+          name: "Arsenal",
+          logo: "https://resources.premierleague.com/premierleague/badges/t3.svg",
+          preferences: {
+            preferredLocationIds: [locationIds[0]],
+            preferredStartHour: 15,
+            preferredEndHour: 18,
+          },
+        },
+        {
+          name: "Chelsea",
+          logo: "https://resources.premierleague.com/premierleague/badges/t8.svg",
+          preferences: {
+            preferredLocationIds: [locationIds[0], locationIds[1]],
+            preferredStartHour: 13,
+            preferredEndHour: 16,
+          },
+        },
+        {
+          name: "Liverpool",
+          logo: "https://resources.premierleague.com/premierleague/badges/t14.svg",
+          preferences: {
+            preferredLocationIds: [],
+            preferredStartHour: 12,
+            preferredEndHour: 15,
+          },
+        },
+        {
+          name: "Manchester City",
+          logo: "https://resources.premierleague.com/premierleague/badges/t43.svg",
+          preferences: {
+            preferredLocationIds: [locationIds[1]],
+            preferredStartHour: 10,
+            preferredEndHour: 14,
+          },
+        },
+        {
+          name: "Manchester United",
+          logo: "https://resources.premierleague.com/premierleague/badges/t1.svg",
+          preferences: {
+            preferredLocationIds: [locationIds[0]],
+            preferredStartHour: 16,
+            preferredEndHour: 18,
+          },
+        },
+        {
+          name: "Tottenham",
+          logo: "https://resources.premierleague.com/premierleague/badges/t6.svg",
+          preferences: {
+            preferredLocationIds: [],
+            preferredStartHour: 9,
+            preferredEndHour: 21,
+          },
+        },
+        {
+          name: "Newcastle",
+          logo: "https://resources.premierleague.com/premierleague/badges/t4.svg",
+          preferences: {
+            preferredLocationIds: [locationIds[3]],
+            preferredStartHour: 14,
+            preferredEndHour: 17,
+          },
+        },
+        {
+          name: "Aston Villa",
+          logo: "https://resources.premierleague.com/premierleague/badges/t7.svg",
+          preferences: {
+            preferredLocationIds: [locationIds[4]],
+            preferredStartHour: 11,
+            preferredEndHour: 15,
+          },
+        },
+        {
+          name: "West Ham",
+          logo: "https://resources.premierleague.com/premierleague/badges/t21.svg",
+          preferences: {
+            preferredLocationIds: [locationIds[1], locationIds[2]],
+            preferredStartHour: 13,
+            preferredEndHour: 16,
+          },
+        },
+        {
+          name: "Brighton",
+          logo: "https://resources.premierleague.com/premierleague/badges/t36.svg",
+          preferences: {
+            preferredLocationIds: [],
+            preferredStartHour: 9,
+            preferredEndHour: 21,
+          },
+        },
+      ];
+
+      const championshipTeams = [
+        {
+          name: "Leeds United",
+          logo: "https://resources.premierleague.com/premierleague/badges/t2.svg",
+          preferences: {
+            preferredLocationIds: [locationIds[2]],
+            preferredStartHour: 14,
+            preferredEndHour: 17,
+          },
+        },
+        {
+          name: "Nottingham Forest",
+          logo: "https://resources.premierleague.com/premierleague/badges/t17.svg",
+          preferences: {
+            preferredLocationIds: [locationIds[1], locationIds[2]],
+            preferredStartHour: 11,
+            preferredEndHour: 15,
+          },
+        },
+        {
+          name: "Sheffield United",
+          logo: "https://resources.premierleague.com/premierleague/badges/t49.svg",
+          preferences: {
+            preferredLocationIds: [],
+            preferredStartHour: 9,
+            preferredEndHour: 21,
+          },
+        },
+        {
+          name: "West Bromwich Albion",
+          logo: "https://resources.premierleague.com/premierleague/badges/t35.svg",
+          preferences: {
+            preferredLocationIds: [],
+            preferredStartHour: 9,
+            preferredEndHour: 21,
+          },
+        },
+        {
+          name: "Middlesbrough",
+          logo: "https://resources.premierleague.com/premierleague/badges/t25.svg",
+          preferences: {
+            preferredLocationIds: [locationIds[3], locationIds[4]],
+            preferredStartHour: 12,
+            preferredEndHour: 16,
+          },
+        },
+        {
+          name: "Stoke City",
+          logo: "https://resources.premierleague.com/premierleague/badges/t110.svg",
+          preferences: {
+            preferredLocationIds: [locationIds[2]],
+            preferredStartHour: 15,
+            preferredEndHour: 18,
+          },
+        },
+        {
+          name: "Watford",
+          logo: "https://resources.premierleague.com/premierleague/badges/t57.svg",
+          preferences: {
+            preferredLocationIds: [locationIds[1]],
+            preferredStartHour: 10,
+            preferredEndHour: 14,
+          },
+        },
+        {
+          name: "Sunderland",
+          logo: "https://resources.premierleague.com/premierleague/badges/t56.svg",
+          preferences: {
+            preferredLocationIds: [],
+            preferredStartHour: 9,
+            preferredEndHour: 21,
+          },
+        },
       ];
 
       const premierLeagueTeamIds = await Promise.all(
@@ -61,10 +198,6 @@ export function usePopulateDemoData() {
 
       const championshipTeamIds = await Promise.all(
         championshipTeams.map((team) => teamService.createTeam(team).then((t) => t.id))
-      );
-
-      const locationIds = await Promise.all(
-        locationConfigs.map((location) => locationService.createLocation(location).then((l) => l.id))
       );
 
       // Add leagues and generate fixtures
@@ -146,5 +279,5 @@ export function usePopulateDemoData() {
     }
   }, [teamService, leagueService, locationService, matchService]);
 
-  return populateDemoData;
+  return { populateDemoData };
 }

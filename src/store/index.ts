@@ -33,7 +33,7 @@ export interface StoreState {
 }
 
 const emptyState = {
-  teams: [],
+  teams: [] as Team[],
   leagues: [],
   leagueTeams: [],
   locations: [],
@@ -51,6 +51,12 @@ export const useStore = create<StoreState>((set, get) => ({
         {
           ...team,
           id,
+          preferences: {
+            preferredLocationIds: [],
+            preferredStartHour: 9,
+            preferredEndHour: 21,
+            ...team.preferences,
+          },
         },
       ],
     }));
@@ -59,7 +65,18 @@ export const useStore = create<StoreState>((set, get) => ({
 
   updateTeam: (id, updates) =>
     set((state) => ({
-      teams: state.teams.map((team) => (team.id === id ? { ...team, ...updates } : team)),
+      teams: state.teams.map((team) =>
+        team.id === id
+          ? {
+              ...team,
+              ...updates,
+              preferences: {
+                ...team.preferences,
+                ...updates.preferences,
+              },
+            }
+          : team
+      ),
     })),
 
   deleteTeam: (id) =>

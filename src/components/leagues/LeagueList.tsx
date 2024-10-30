@@ -5,7 +5,7 @@ import { useLeagues } from "../../hooks/useLeagues";
 import { RepositoryFactory } from "../../repositories/factory";
 import { Modal } from "../shared/Modal";
 import { LeagueForm } from "./LeagueForm";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 import { usePopulateDemoData } from "../../hooks/usePopulateDemoData";
 
 export default function LeagueList() {
@@ -19,7 +19,7 @@ export default function LeagueList() {
   }>(null);
 
   const { leagues, loading, error, reloadLeagues } = useLeagues();
-  const populateDemoData = usePopulateDemoData();
+  const { populateDemoData } = usePopulateDemoData();
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
