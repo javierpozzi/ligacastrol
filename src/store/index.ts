@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { Team, League, Location, Match, LeagueTeam } from "../types";
 import { generateFixtures } from "../utils/fixtures";
 
-interface Store {
+export interface StoreState {
   teams: Team[];
   leagues: League[];
   leagueTeams: LeagueTeam[];
@@ -40,7 +40,7 @@ const emptyState = {
   matches: [],
 };
 
-export const useStore = create<Store>((set, get) => ({
+export const useStore = create<StoreState>((set, get) => ({
   ...emptyState,
 
   addTeam: (team) => {
@@ -110,32 +110,45 @@ export const useStore = create<Store>((set, get) => ({
       matches: state.matches.filter((match) => match.leagueId !== leagueId),
     })),
 
-  generateLeagueFixtures: (leagueId) =>
+  generateLeagueFixtures: (leagueId: string) => {
     set((state) => {
-      const league = state.leagues.find((l) => l.id === leagueId);
-      if (!league) return state;
+      try {
+        const teams = state.leagueTeams.filter((lt) => lt.leagueId === leagueId);
 
-      const leagueTeams = state.leagueTeams.filter((lt) => lt.leagueId === leagueId).map((lt) => lt.teamId);
+        if (teams.length < 2) {
+          throw new Error("Need at least 2 teams to generate fixtures");
+        }
 
-      const fixtures = generateFixtures(leagueTeams);
-      const matches: Match[] = fixtures.map((fixture, index) => ({
-        id: crypto.randomUUID(),
-        homeTeamId: fixture.home,
-        awayTeamId: fixture.away,
-        leagueId,
-        locationId: null,
-        weekNumber: Math.floor(index / (leagueTeams.length / 2)) + 1,
-        date: null,
-        homeScore: null,
-        awayScore: null,
-        status: "scheduled",
-      }));
+        // Clear existing fixtures first
+        const matchesWithoutLeague = state.matches.filter((m) => m.leagueId !== leagueId);
 
-      return {
-        ...state,
-        matches: [...state.matches, ...matches],
-      };
-    }),
+        const teamIds = teams.map((t) => t.teamId);
+        const fixtures = generateFixtures(teamIds);
+        const fixturesPerWeek = Math.floor(teamIds.length / 2);
+
+        const newMatches = fixtures.map((fixture, index) => ({
+          id: crypto.randomUUID(),
+          leagueId,
+          homeTeamId: fixture.home,
+          awayTeamId: fixture.away,
+          weekNumber: Math.floor(index / fixturesPerWeek) + 1,
+          date: null,
+          locationId: null,
+          homeScore: null,
+          awayScore: null,
+          status: "scheduled" as const,
+        }));
+
+        return {
+          ...state,
+          matches: [...matchesWithoutLeague, ...newMatches],
+        };
+      } catch (error) {
+        console.error("Failed to generate fixtures:", error);
+        throw error;
+      }
+    });
+  },
 
   updateMatch: (matchId: string, updates: Partial<Match>) =>
     set((state) => {

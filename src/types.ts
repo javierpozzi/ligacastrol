@@ -30,6 +30,8 @@ export interface Location {
   address: string;
 }
 
+export type MatchStatus = "scheduled" | "completed";
+
 export interface Match {
   id: string;
   homeTeamId: string;
@@ -40,5 +42,5 @@ export interface Match {
   date: string | null;
   homeScore: number | null;
   awayScore: number | null;
-  status: "scheduled" | "completed";
+  status: MatchStatus;
 }

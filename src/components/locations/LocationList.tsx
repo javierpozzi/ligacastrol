@@ -1,26 +1,31 @@
 import React, { useState } from 'react';
-import { useStore } from '../../store';
-import { MapPin, Edit2, Trash2, PlusCircle } from 'lucide-react';
+import { Edit2, PlusCircle, Trash2, MapPin } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useLocations } from '../../hooks/useLocations';
 import { LocationForm } from './LocationForm';
 import { Modal } from '../shared/Modal';
-import toast from 'react-hot-toast';
+import { RepositoryFactory } from '../../repositories/factory';
+import { LocationService } from '../../services/location-service';
+import { Location } from '../../types';
 
 export function LocationList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingLocation, setEditingLocation] = useState<null | { id: string; name: string; address: string }>(null);
-  const { locations, matches, deleteLocation } = useStore();
+  const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+  const { locations, loading, error, reloadLocations } = useLocations();
 
-  const handleDelete = (locationId: string) => {
-    const locationInUse = matches.some(match => match.locationId === locationId);
-    if (locationInUse) {
-      toast.error('Cannot delete location as it is assigned to one or more matches');
-      return;
+  const locationService = new LocationService(RepositoryFactory.getLocationRepository());
+
+  const handleDelete = async (locationId: string) => {
+    try {
+      await locationService.deleteLocation(locationId);
+      reloadLocations();
+      toast.success('Location deleted successfully');
+    } catch (err) {
+      toast.error('Failed to delete location');
     }
-    deleteLocation(locationId);
-    toast.success('Location deleted successfully');
   };
 
-  const handleEdit = (location: { id: string; name: string; address: string }) => {
+  const handleEdit = (location: Location) => {
     setEditingLocation(location);
     setIsModalOpen(true);
   };
@@ -30,27 +35,30 @@ export function LocationList() {
     setEditingLocation(null);
   };
 
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Ubicaciones</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Locations</h2>
         <button
           onClick={() => setIsModalOpen(true)}
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
         >
           <PlusCircle className="w-4 h-4 mr-2" />
-          Crear Ubicación
+          Create Location
         </button>
       </div>
 
       {locations.length === 0 ? (
         <div className="text-center py-12">
           <MapPin className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Sin ubicaciones</h3>
-          <p className="mt-1 text-sm text-gray-500">Comienza creando una nueva ubicación.</p>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No locations</h3>
+          <p className="mt-1 text-sm text-gray-500">Get started by creating a new location.</p>
         </div>
       ) : (
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {locations.map(location => (
             <div
               key={location.id}

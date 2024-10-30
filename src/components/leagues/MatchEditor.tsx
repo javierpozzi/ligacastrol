@@ -2,6 +2,8 @@ import React from 'react';
 import { useStore } from '../../store';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import { MatchService } from '../../services/match-service';
+import { RepositoryFactory } from '../../repositories/factory';
 
 interface MatchEditorProps {
   matchId: string;
@@ -9,15 +11,20 @@ interface MatchEditorProps {
 }
 
 export function MatchEditor({ matchId, onClose }: MatchEditorProps) {
-  const { matches, locations, teams, updateMatch, updateTeamStats } = useStore();
+  const { matches, locations, teams } = useStore();
   const match = matches.find(m => m.id === matchId);
+  
+  const matchService = new MatchService(
+    RepositoryFactory.getMatchRepository(),
+    RepositoryFactory.getLeagueTeamRepository()
+  );
   
   if (!match) return null;
   
   const homeTeam = teams.find(t => t.id === match.homeTeamId);
   const awayTeam = teams.find(t => t.id === match.awayTeamId);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
     const locationId = formData.get('locationId') as string;
@@ -44,30 +51,23 @@ export function MatchEditor({ matchId, onClose }: MatchEditorProps) {
       return;
     }
 
-    const oldStatus = match.status;
     const newStatus = (homeScore !== null && awayScore !== null) ? 'completed' : 'scheduled';
-    
-    // If match was previously completed, reverse the old stats
-    if (oldStatus === 'completed' && match.homeScore !== null && match.awayScore !== null) {
-      updateTeamStats(match.homeTeamId, match.awayTeamId, match.homeScore, match.awayScore, true);
+
+    try {
+      await matchService.updateMatch(matchId, {
+        locationId: locationId === '' ? null : locationId,
+        date: dateTime,
+        homeScore,
+        awayScore,
+        status: newStatus
+      });
+
+      toast.success('Match details updated successfully');
+      onClose();
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to update match');
     }
-
-    // Update match details
-    updateMatch(matchId, {
-      locationId: locationId === '' ? null : locationId,
-      date: dateTime,
-      homeScore,
-      awayScore,
-      status: newStatus
-    });
-
-    // Only update team stats if the match is being completed with scores
-    if (newStatus === 'completed' && homeScore !== null && awayScore !== null) {
-      updateTeamStats(match.homeTeamId, match.awayTeamId, homeScore, awayScore);
-    }
-
-    toast.success('Match details updated successfully');
-    onClose();
   };
 
   return (

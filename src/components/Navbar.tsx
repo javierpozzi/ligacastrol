@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Trophy, Users, MapPin, Database, X, Menu } from 'lucide-react';
-import { useStore } from '../store';
-import toast from 'react-hot-toast';
-import { Match } from '../types';
+import { usePopulateDemoData } from '../hooks/usePopulateDemoData';
 
 interface NavbarProps {
   activeTab: string;
@@ -11,118 +9,7 @@ interface NavbarProps {
 
 export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { 
-    addTeam, 
-    addLeague,
-    addLocation,
-    addTeamToLeague,
-    generateLeagueFixtures, 
-    updateMatch,
-    clearStore
-  } = useStore();
-
-  const populateDemoData = () => {
-    // Clear existing data first
-    clearStore();
-
-    // Add locations first
-    const locations = [
-      { name: 'Estadio Santiago Bernabéu', address: 'Av. de Concha Espina, 1, Madrid' },
-      { name: 'Camp Nou', address: 'C. d\'Arístides Maillol, 12, Barcelona' },
-      { name: 'Estadio Metropolitano', address: 'Av. de Luis Aragonés, 4, Madrid' },
-      { name: 'Estadio Ramón Sánchez Pizjuán', address: 'C. Sevilla Fútbol Club, Sevilla' },
-      { name: 'Estadio de Mestalla', address: 'Av. de Suècia, València' }
-    ];
-
-    const locationIds = locations.map(location => {
-      const { id } = addLocation(location);
-      return id;
-    });
-
-    // Split teams into divisions
-    const primeraTeams = [
-      'Real Madrid', 'Barcelona', 'Atletico Madrid', 'Sevilla', 'Valencia',
-      'Villarreal', 'Athletic Bilbao', 'Real Sociedad', 'Real Betis', 'Getafe',
-      'Osasuna', 'Granada', 'Levante', 'Celta Vigo', 'Alaves',
-      'Espanyol', 'Mallorca', 'Cadiz', 'Elche', 'Rayo Vallecano'
-    ];
-
-    const segundaTeams = [
-      'Real Zaragoza', 'Sporting Gijon', 'Real Oviedo', 'Racing Santander', 'Tenerife',
-      'Las Palmas', 'Malaga', 'Albacete', 'Burgos CF', 'Cartagena',
-      'Eibar', 'Leganes', 'Mirandes', 'Ponferradina', 'Real Valladolid',
-      'SD Huesca', 'Alcorcon', 'Fuenlabrada', 'Lugo', 'Almeria'
-    ];
-
-    // Create teams and store IDs by division
-    const primeraTeamIds = primeraTeams.map(name => {
-      const { id } = addTeam({
-        name,
-        logo: `https://source.unsplash.com/100x100/?${name.toLowerCase().split(' ')[0]},football`,
-      });
-      return id;
-    });
-
-    const segundaTeamIds = segundaTeams.map(name => {
-      const { id } = addTeam({
-        name,
-        logo: `https://source.unsplash.com/100x100/?${name.toLowerCase().split(' ')[0]},football`,
-      });
-      return id;
-    });
-
-    // Add leagues with specific team distributions
-    const leagueConfigs = [
-      { name: 'Primera División', year: 2024, teamIds: primeraTeamIds, playedWeeks: 38, isActive: true },
-      { name: 'Primera División', year: 2023, teamIds: primeraTeamIds, playedWeeks: 38, isActive: false },
-      { name: 'Segunda División', year: 2024, teamIds: segundaTeamIds, playedWeeks: 19, isActive: true },
-      { name: 'Segunda División', year: 2023, teamIds: segundaTeamIds, playedWeeks: 38, isActive: false },
-    ];
-    
-    leagueConfigs.forEach(({ name, year, teamIds, playedWeeks, isActive }) => {
-      // Add league
-      const { id: leagueId } = addLeague({ 
-        name, 
-        year,
-        isActive
-      });
-
-      // Add teams to league
-      teamIds.forEach(teamId => {
-        addTeamToLeague(leagueId, teamId);
-      });
-      
-      // Generate fixtures first
-      generateLeagueFixtures(leagueId);
-      
-      // Then get the updated matches from the store
-      const leagueMatches = useStore.getState().matches.filter(m => m.leagueId === leagueId);
-
-      // Add played matches for specified weeks
-      if (playedWeeks > 0) {
-        for (let week = 1; week <= playedWeeks; week++) {
-          const weekMatches = leagueMatches.filter(m => m.weekNumber === week);
-          weekMatches.forEach(match => {
-            const homeScore = Math.floor(Math.random() * 5);
-            const awayScore = Math.floor(Math.random() * 5);
-            const randomLocationId = locationIds[Math.floor(Math.random() * locationIds.length)];
-            const matchDate = new Date(year, 7 + Math.floor(week / 4), 1 + (week % 4) * 7);
-            matchDate.setHours(Math.random() > 0.5 ? 16 : 20);
-            
-            updateMatch(match.id, {
-              homeScore,
-              awayScore,
-              status: 'completed',
-              locationId: randomLocationId,
-              date: matchDate.toISOString()
-            });
-          });
-        }
-      }
-    });
-
-    toast.success('Demo data loaded successfully');
-  };
+  const populateDemoData = usePopulateDemoData();
 
   return (
     <nav className="bg-white shadow">

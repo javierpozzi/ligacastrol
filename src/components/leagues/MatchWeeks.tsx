@@ -1,8 +1,9 @@
-import React from 'react';
-import { useStore } from '../../store';
-import { ArrowLeft, PlusCircle, RefreshCw } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { FixtureList } from '../FixtureList';
+import { Calendar } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import { RepositoryFactory } from "../../repositories/factory";
+import { Match } from "../../types";
+import { FixtureList } from "../FixtureList";
 
 interface MatchWeeksProps {
   leagueId: string;
@@ -10,79 +11,72 @@ interface MatchWeeksProps {
 }
 
 export function MatchWeeks({ leagueId, onBack }: MatchWeeksProps) {
-  const { leagues, matches, generateLeagueFixtures, clearLeagueFixtures, leagueTeams } = useStore();
-  const league = leagues.find(l => l.id === leagueId);
-  
-  if (!league) return null;
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  const leagueMatches = matches.filter(m => m.leagueId === leagueId);
-  const weekNumbers = Array.from(
-    new Set(leagueMatches.map(m => m.weekNumber))
-  ).sort((a, b) => a - b);
+  const matchService = useMemo(() => RepositoryFactory.getMatchService(), []);
 
-  const handleGenerateFixtures = () => {
-    const teamCount = leagueTeams.filter(lt => lt.leagueId === leagueId).length;
-    if (teamCount < 2) {
-      toast.error('Need at least 2 teams to generate fixtures');
-      return;
+  const leagueService = useMemo(() => RepositoryFactory.getLeagueService(), []);
+
+  const loadMatches = useCallback(async () => {
+    try {
+      setLoading(true);
+      const matchData = await matchService.getMatchesByLeagueId(leagueId);
+      setMatches(matchData);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error("Failed to load matches"));
+    } finally {
+      setLoading(false);
     }
-    
-    generateLeagueFixtures(leagueId);
-    toast.success('Fixtures generated successfully');
+  }, [leagueId, matchService]);
+
+  const handleGenerateFixtures = async () => {
+    try {
+      await leagueService.generateFixtures(leagueId);
+      await loadMatches();
+      toast.success("Fixtures generated successfully");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to generate fixtures");
+    }
   };
 
-  const handleRegenerateFixtures = () => {
-    const teamCount = leagueTeams.filter(lt => lt.leagueId === leagueId).length;
-    if (teamCount < 2) {
-      toast.error('Need at least 2 teams to generate fixtures');
-      return;
-    }
+  useEffect(() => {
+    loadMatches();
+  }, [loadMatches]);
 
-    clearLeagueFixtures(leagueId);
-    generateLeagueFixtures(leagueId);
-    toast.success('Fixtures regenerated successfully');
-  };
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  const weekNumbers = Array.from(new Set(matches.map((m) => m.weekNumber))).sort((a, b) => a - b);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div className="flex items-center space-x-4">
-          <button
-            onClick={onBack}
-            className="p-2 text-gray-400 hover:text-gray-500"
-          >
-            <ArrowLeft className="w-5 h-5" />
+          <button onClick={onBack} className="text-gray-600 hover:text-gray-900">
+            ← Back
           </button>
-          <h2 className="text-2xl font-bold text-gray-900">{league.name} - Fixtures</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Match Weeks</h2>
         </div>
-        {leagueMatches.length === 0 ? (
-          <button
-            onClick={handleGenerateFixtures}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-          >
-            <PlusCircle className="w-4 h-4 mr-2" />
-            Generate Fixtures
-          </button>
-        ) : (
-          <button
-            onClick={handleRegenerateFixtures}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-amber-600 hover:bg-amber-700"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Regenerate Fixtures
-          </button>
-        )}
+        <div className="space-x-2">
+          {matches.length === 0 && (
+            <button
+              onClick={handleGenerateFixtures}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Generate Fixtures
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="space-y-8">
-        {weekNumbers.map(weekNumber => (
-          <FixtureList
-            key={weekNumber}
-            leagueId={leagueId}
-            weekNumber={weekNumber}
-          />
-        ))}
-      </div>
+      {weekNumbers.map((weekNumber) => (
+        <FixtureList key={weekNumber} leagueId={leagueId} weekNumber={weekNumber} />
+      ))}
     </div>
   );
 }

@@ -1,43 +1,39 @@
-export interface Team {
-  id: string;
+export type EntityId = string;
+
+export interface BaseEntity {
+  id: EntityId;
+}
+
+export interface Team extends BaseEntity {
   name: string;
   logo: string;
-  played: number;
-  won: number;
-  drawn: number;
-  lost: number;
-  goalsFor: number;
-  goalsAgainst: number;
-  points: number;
 }
 
-export interface League {
-  id: string;
+export interface League extends BaseEntity {
   name: string;
-  teams: string[];
+  teams: EntityId[];
 }
 
-export interface Location {
-  id: string;
+export interface Location extends BaseEntity {
   name: string;
   address: string;
 }
 
-export interface Match {
-  id: string;
-  homeTeamId: string;
-  awayTeamId: string;
-  leagueId: string;
-  locationId: string | null;
+export type MatchStatus = "scheduled" | "completed";
+
+export interface Match extends BaseEntity {
+  homeTeamId: EntityId;
+  awayTeamId: EntityId;
+  leagueId: EntityId;
+  locationId: EntityId | null;
   weekNumber: number;
   date: string | null;
   homeScore: number | null;
   awayScore: number | null;
-  status: 'scheduled' | 'completed';
+  status: MatchStatus;
 }
 
-export interface Standing {
-  teamId: string;
+export interface Standing extends BaseEntity {
   played: number;
   won: number;
   drawn: number;
