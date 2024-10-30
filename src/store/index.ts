@@ -21,13 +21,8 @@ interface Store {
   generateLeagueFixtures: (leagueId: string) => void;
   clearLeagueFixtures: (leagueId: string) => void;
   updateMatch: (matchId: string, updates: Partial<Match>) => void;
-  updateTeamStats: (
-    homeTeamId: string,
-    awayTeamId: string,
-    homeScore: number,
-    awayScore: number,
-    reverse?: boolean
-  ) => void;
+  updateTeamStats: () => void;
+  clearStore: () => void;
 }
 
 export const useStore = create<Store>((set) => ({
@@ -132,50 +127,103 @@ export const useStore = create<Store>((set) => ({
     }),
 
   updateMatch: (matchId, updates) =>
-    set((state) => ({
-      matches: state.matches.map((match) => (match.id === matchId ? { ...match, ...updates } : match)),
-    })),
-
-  updateTeamStats: (
-    homeTeamId: string,
-    awayTeamId: string,
-    homeScore: number,
-    awayScore: number,
-    reverse: boolean = false
-  ) =>
     set((state) => {
-      const multiplier = reverse ? -1 : 1;
+      const match = state.matches.find((m) => m.id === matchId);
+      if (!match) return state;
+
+      if (
+        updates.status === "completed" &&
+        typeof updates.homeScore === "number" &&
+        typeof updates.awayScore === "number"
+      ) {
+        if (
+          match.status === "completed" &&
+          typeof match.homeScore === "number" &&
+          typeof match.awayScore === "number"
+        ) {
+          state = {
+            ...state,
+            teams: state.teams.map((team) => {
+              if (team.id === match.homeTeamId) {
+                return {
+                  ...team,
+                  played: team.played - 1,
+                  won: team.won - (match.homeScore > match.awayScore ? 1 : 0),
+                  drawn: team.drawn - (match.homeScore === match.awayScore ? 1 : 0),
+                  lost: team.lost - (match.homeScore < match.awayScore ? 1 : 0),
+                  goalsFor: team.goalsFor - match.homeScore,
+                  goalsAgainst: team.goalsAgainst - match.awayScore,
+                  points:
+                    team.points - (match.homeScore > match.awayScore ? 3 : match.homeScore === match.awayScore ? 1 : 0),
+                };
+              }
+              if (team.id === match.awayTeamId) {
+                return {
+                  ...team,
+                  played: team.played - 1,
+                  won: team.won - (match.awayScore > match.homeScore ? 1 : 0),
+                  drawn: team.drawn - (match.homeScore === match.awayScore ? 1 : 0),
+                  lost: team.lost - (match.awayScore < match.homeScore ? 1 : 0),
+                  goalsFor: team.goalsFor - match.awayScore,
+                  goalsAgainst: team.goalsAgainst - match.homeScore,
+                  points:
+                    team.points - (match.awayScore > match.homeScore ? 3 : match.homeScore === match.awayScore ? 1 : 0),
+                };
+              }
+              return team;
+            }),
+          };
+        }
+
+        state = {
+          ...state,
+          teams: state.teams.map((team) => {
+            if (team.id === match.homeTeamId) {
+              return {
+                ...team,
+                played: team.played + 1,
+                won: team.won + (updates.homeScore > updates.awayScore ? 1 : 0),
+                drawn: team.drawn + (updates.homeScore === updates.awayScore ? 1 : 0),
+                lost: team.lost + (updates.homeScore < updates.awayScore ? 1 : 0),
+                goalsFor: team.goalsFor + updates.homeScore,
+                goalsAgainst: team.goalsAgainst + updates.awayScore,
+                points:
+                  team.points +
+                  (updates.homeScore > updates.awayScore ? 3 : updates.homeScore === updates.awayScore ? 1 : 0),
+              };
+            }
+            if (team.id === match.awayTeamId) {
+              return {
+                ...team,
+                played: team.played + 1,
+                won: team.won + (updates.awayScore > updates.homeScore ? 1 : 0),
+                drawn: team.drawn + (updates.homeScore === updates.awayScore ? 1 : 0),
+                lost: team.lost + (updates.awayScore < updates.homeScore ? 1 : 0),
+                goalsFor: team.goalsFor + updates.awayScore,
+                goalsAgainst: team.goalsAgainst + updates.homeScore,
+                points:
+                  team.points +
+                  (updates.awayScore > updates.homeScore ? 3 : updates.homeScore === updates.awayScore ? 1 : 0),
+              };
+            }
+            return team;
+          }),
+        };
+      }
 
       return {
-        teams: state.teams.map((team) => {
-          if (team.id === homeTeamId) {
-            const points = homeScore > awayScore ? 3 : homeScore === awayScore ? 1 : 0;
-            return {
-              ...team,
-              played: team.played + 1 * multiplier,
-              won: team.won + (homeScore > awayScore ? 1 : 0) * multiplier,
-              drawn: team.drawn + (homeScore === awayScore ? 1 : 0) * multiplier,
-              lost: team.lost + (homeScore < awayScore ? 1 : 0) * multiplier,
-              goalsFor: team.goalsFor + homeScore * multiplier,
-              goalsAgainst: team.goalsAgainst + awayScore * multiplier,
-              points: team.points + points * multiplier,
-            };
-          }
-          if (team.id === awayTeamId) {
-            const points = awayScore > homeScore ? 3 : homeScore === awayScore ? 1 : 0;
-            return {
-              ...team,
-              played: team.played + 1 * multiplier,
-              won: team.won + (awayScore > homeScore ? 1 : 0) * multiplier,
-              drawn: team.drawn + (homeScore === awayScore ? 1 : 0) * multiplier,
-              lost: team.lost + (awayScore < homeScore ? 1 : 0) * multiplier,
-              goalsFor: team.goalsFor + awayScore * multiplier,
-              goalsAgainst: team.goalsAgainst + homeScore * multiplier,
-              points: team.points + points * multiplier,
-            };
-          }
-          return team;
-        }),
+        ...state,
+        matches: state.matches.map((m) => (m.id === matchId ? { ...m, ...updates } : m)),
       };
     }),
+
+  updateTeamStats: () => set((state) => state),
+
+  clearStore: () =>
+    set(() => ({
+      teams: [],
+      leagues: [],
+      locations: [],
+      matches: [],
+    })),
 }));

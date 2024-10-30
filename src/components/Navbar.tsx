@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Trophy, Users, MapPin, Database, X, Menu } from 'lucide-react';
 import { useStore } from '../store';
 import toast from 'react-hot-toast';
+import { Match } from '../types';
 
 interface NavbarProps {
   activeTab: string;
@@ -10,21 +11,42 @@ interface NavbarProps {
 
 export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { addTeam, addLeague, addLocation, generateLeagueFixtures } = useStore();
+  const { 
+    addTeam, 
+    addLeague, 
+    addLocation, 
+    generateLeagueFixtures, 
+    updateMatch,
+    matches,
+    clearStore
+  } = useStore();
 
   const populateDemoData = () => {
-    // Add teams
+    // Clear existing data first
+    clearStore();
+
+    // Add teams - we need 59 teams in total (20 + 20 + 19)
     const teamNames = [
-      'Dragones Rojos', 'Águilas Azules', 'Leones Verdes', 'Tigres Amarillos', 
-      'Panteras Negras', 'Halcones Blancos', 'Caballeros Púrpura', 'Guerreros Naranjas',
-      'Lobos Plateados', 'Osos Dorados', 'Toros de Bronce', 'Fénix de Platino',
-      'Cobras de Cristal', 'Raptores Rubí', 'Tiburones Zafiro', 'Águilas Esmeralda',
-      'Dragones Diamante', 'Piratas Perla', 'Jaguares Jade', 'Flechas Ámbar'
+      // Primera División (1-20)
+      'Real Madrid', 'Barcelona', 'Atletico Madrid', 'Sevilla', 'Valencia',
+      'Villarreal', 'Athletic Bilbao', 'Real Sociedad', 'Real Betis', 'Getafe',
+      'Osasuna', 'Granada', 'Levante', 'Celta Vigo', 'Alaves',
+      'Espanyol', 'Mallorca', 'Cadiz', 'Elche', 'Rayo Vallecano',
+      // Segunda División (21-40)
+      'Real Zaragoza', 'Sporting Gijon', 'Real Oviedo', 'Racing Santander', 'Tenerife',
+      'Las Palmas', 'Malaga', 'Albacete', 'Burgos CF', 'Cartagena',
+      'Eibar', 'Leganes', 'Mirandes', 'Ponferradina', 'Real Valladolid',
+      'SD Huesca', 'Alcorcon', 'Fuenlabrada', 'Lugo', 'Almeria',
+      // Tercera División (41-59)
+      'Deportivo La Coruna', 'Numancia', 'Hercules', 'Racing Ferrol', 'Badajoz',
+      'Cultural Leonesa', 'SD Logrones', 'Unionistas', 'Cornella', 'Sabadell',
+      'Atletico Baleares', 'UCAM Murcia', 'Linares', 'San Fernando', 'Algeciras',
+      'Real Madrid Castilla', 'Barcelona B', 'Atletico Madrid B', 'Sevilla Atletico'
     ];
 
     const teams = teamNames.map(name => ({
       name,
-      logo: `https://source.unsplash.com/100x100/?${name.toLowerCase().split(' ')[1]},sport`,
+      logo: `https://source.unsplash.com/100x100/?${name.toLowerCase().split(' ')[0]},football`,
     }));
 
     const teamIds = teams.map(team => {
@@ -32,35 +54,58 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
       return id;
     });
 
-    // Add leagues
-    const leagueNames = ['División Premier', 'Campeonato', 'Liga Élite'];
-    const teamsPerLeague = Math.floor(teamIds.length / leagueNames.length);
+    // Add leagues with specific team distributions
+    const leagueConfigs = [
+      { name: 'Primera División', teamCount: 20, playedWeeks: 5 },
+      { name: 'Segunda División', teamCount: 20, playedWeeks: 0 },
+      { name: 'Tercera División', teamCount: 19, playedWeeks: 5 }
+    ];
     
     let currentTeamIndex = 0;
-    leagueNames.forEach(name => {
-      const leagueTeams = teamIds.slice(
-        currentTeamIndex,
-        currentTeamIndex + teamsPerLeague
-      );
-      const { id } = addLeague({ name, teams: leagueTeams });
-      generateLeagueFixtures(id);
-      currentTeamIndex += teamsPerLeague;
+    leagueConfigs.forEach(({ name, teamCount, playedWeeks }) => {
+      const leagueTeams = teamIds.slice(currentTeamIndex, currentTeamIndex + teamCount);
+      const { id: leagueId } = addLeague({ name, teams: leagueTeams });
+      
+      // Generate fixtures first
+      generateLeagueFixtures(leagueId);
+      
+      // Then get the updated matches from the store
+      const leagueMatches = useStore.getState().matches.filter(m => m.leagueId === leagueId);
+
+      // Add played matches for specified weeks
+      if (playedWeeks > 0) {
+        for (let week = 1; week <= playedWeeks; week++) {
+          const weekMatches = leagueMatches.filter(m => m.weekNumber === week);
+          weekMatches.forEach(match => {
+            const homeScore = Math.floor(Math.random() * 5);
+            const awayScore = Math.floor(Math.random() * 5);
+            
+            updateMatch(match.id, {
+              homeScore,
+              awayScore,
+              status: 'completed'
+            });
+          });
+        }
+      }
+      
+      currentTeamIndex += teamCount;
     });
 
     // Add locations
     const locations = [
-      { name: 'Estadio Central', address: 'Calle Principal 123, Centro' },
-      { name: 'Arena Complejo Deportivo', address: 'Avenida Atlética 456, Ciudad Deportiva' },
-      { name: 'Campo Victoria', address: 'Calle Campeonato 789, Villa Victoria' },
-      { name: 'Estadio Parque Unidad', address: 'Boulevard Comunidad 321, Ciudad Unida' },
-      { name: 'Centro Élite', address: 'Avenida Pro 654, Villa Élite' }
+      { name: 'Estadio Santiago Bernabéu', address: 'Av. de Concha Espina, 1, Madrid' },
+      { name: 'Camp Nou', address: 'C. d\'Arístides Maillol, 12, Barcelona' },
+      { name: 'Estadio Metropolitano', address: 'Av. de Luis Aragonés, 4, Madrid' },
+      { name: 'Estadio Ramón Sánchez Pizjuán', address: 'C. Sevilla Fútbol Club, Sevilla' },
+      { name: 'Estadio de Mestalla', address: 'Av. de Suècia, València' }
     ];
 
     locations.forEach(location => {
       addLocation(location);
     });
 
-    toast.success('Datos demo poblados exitosamente!');
+    toast.success('Demo data populated successfully');
   };
 
   return (

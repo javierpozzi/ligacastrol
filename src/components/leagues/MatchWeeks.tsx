@@ -10,7 +10,7 @@ interface MatchWeeksProps {
 }
 
 export function MatchWeeks({ leagueId, onBack }: MatchWeeksProps) {
-  const { leagues, teams, matches, generateLeagueFixtures, clearLeagueFixtures } = useStore();
+  const { leagues, matches, generateLeagueFixtures, clearLeagueFixtures } = useStore();
   const league = leagues.find(l => l.id === leagueId);
   
   if (!league) return null;
