@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { useStore } from '../../store';
-import { PlusCircle } from 'lucide-react';
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { RepositoryFactory } from "../../repositories/factory";
+import { useLocations } from "../../hooks/useLocations";
 
 interface LocationFormProps {
   onClose: () => void;
@@ -12,20 +13,28 @@ interface LocationFormProps {
 }
 
 export function LocationForm({ onClose, initialData }: LocationFormProps) {
-  const [name, setName] = useState(initialData?.name ?? '');
-  const [address, setAddress] = useState(initialData?.address ?? '');
-  const addLocation = useStore(state => state.addLocation);
-  const updateLocation = useStore(state => state.updateLocation);
+  const [name, setName] = useState(initialData?.name ?? "");
+  const [address, setAddress] = useState(initialData?.address ?? "");
+  const { reloadLocations } = useLocations();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim() && address.trim()) {
+
+    try {
+      const locationService = RepositoryFactory.getLocationService();
+
       if (initialData) {
-        updateLocation(initialData.id, { name, address });
+        await locationService.updateLocation(initialData.id, { name, address });
+        toast.success("Location updated successfully");
       } else {
-        addLocation({ name, address });
+        await locationService.createLocation({ name, address });
+        toast.success("Location created successfully");
       }
+
+      reloadLocations();
       onClose();
+    } catch {
+      toast.error(initialData ? "Failed to update location" : "Failed to create location");
     }
   };
 
@@ -41,10 +50,10 @@ export function LocationForm({ onClose, initialData }: LocationFormProps) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
-          placeholder="Wembley Stadium"
           required
         />
       </div>
+
       <div>
         <label htmlFor="address" className="block text-sm font-medium text-gray-700">
           Address
@@ -55,24 +64,23 @@ export function LocationForm({ onClose, initialData }: LocationFormProps) {
           onChange={(e) => setAddress(e.target.value)}
           rows={3}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
-          placeholder="London, HA9 0WS, England"
           required
         />
       </div>
-      <div className="flex justify-end space-x-3">
+
+      <div className="flex justify-end space-x-3 pt-4">
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700"
         >
-          <PlusCircle className="w-4 h-4 mr-2" />
-          {initialData ? 'Update Location' : 'Create Location'}
+          {initialData ? "Update" : "Create"}
         </button>
       </div>
     </form>

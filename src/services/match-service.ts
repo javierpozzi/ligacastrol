@@ -93,4 +93,9 @@ export class MatchService {
       points: awayTeam.points + (awayScore > homeScore ? 3 : awayScore === homeScore ? 1 : 0),
     });
   }
+
+  async getByLeagueAndWeek(leagueId: string, weekNumber: number): Promise<Match[]> {
+    const matches = await this.getByLeagueId(leagueId);
+    return matches.filter((match) => match.weekNumber === weekNumber);
+  }
 }
