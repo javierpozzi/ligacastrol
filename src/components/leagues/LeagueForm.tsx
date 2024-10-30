@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { useStore } from '../../store';
-import { PlusCircle } from 'lucide-react';
-import { TeamSelector } from './TeamSelector';
+import { PlusCircle } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import { RepositoryFactory } from "../../repositories/factory";
+import { TeamSelector } from "./TeamSelector";
 
 interface LeagueFormProps {
   onClose: () => void;
@@ -14,54 +15,65 @@ interface LeagueFormProps {
 }
 
 export function LeagueForm({ onClose, initialData }: LeagueFormProps) {
-  const [name, setName] = useState(initialData?.name ?? '');
+  const [name, setName] = useState(initialData?.name ?? "");
   const [year, setYear] = useState(initialData?.year ?? new Date().getFullYear());
   const [isActive, setIsActive] = useState(initialData?.isActive ?? true);
-  const [selectedTeams, setSelectedTeams] = useState<string[]>(
-    initialData ? useStore(state => 
-      state.leagueTeams
-        .filter(lt => lt.leagueId === initialData.id)
-        .map(lt => lt.teamId)
-    ) : []
-  );
+  const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
 
-  const addLeague = useStore(state => state.addLeague);
-  const updateLeague = useStore(state => state.updateLeague);
-  const addTeamToLeague = useStore(state => state.addTeamToLeague);
-  const removeTeamFromLeague = useStore(state => state.removeTeamFromLeague);
+  const leagueService = useMemo(() => RepositoryFactory.getLeagueService(), []);
+  const leagueTeamService = useMemo(() => RepositoryFactory.getLeagueTeamService(), []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (initialData) {
+      const loadTeams = async () => {
+        const teams = await leagueTeamService.getTeamsByLeagueId(initialData.id);
+        setSelectedTeams(teams.map((t) => t.teamId));
+      };
+      loadTeams();
+    }
+  }, [initialData, leagueTeamService]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
-      if (initialData) {
-        updateLeague(initialData.id, { name, year, isActive });
-        
-        // Update teams
-        const currentTeams = useStore.getState().leagueTeams
-          .filter(lt => lt.leagueId === initialData.id)
-          .map(lt => lt.teamId);
-        
-        // Remove teams that are no longer selected
-        currentTeams.forEach(teamId => {
-          if (!selectedTeams.includes(teamId)) {
-            removeTeamFromLeague(initialData.id, teamId);
-          }
-        });
-
-        // Add newly selected teams
-        selectedTeams.forEach(teamId => {
-          if (!currentTeams.includes(teamId)) {
-            addTeamToLeague(initialData.id, teamId);
-          }
-        });
-      } else {
-        const { id } = addLeague({ name, year, isActive });
-        selectedTeams.forEach(teamId => {
-          addTeamToLeague(id, teamId);
-        });
+      try {
+        if (initialData) {
+          await leagueService.updateLeague(initialData.id, { name, year, isActive });
+          await updateLeagueTeams(initialData.id);
+        } else {
+          const league = await leagueService.createLeague({ name, year, isActive });
+          await addTeamsToLeague(league.id);
+        }
+        toast.success(`League ${initialData ? "updated" : "created"} successfully`);
+        onClose();
+      } catch (error) {
+        toast.error(`Failed to ${initialData ? "update" : "create"} league`);
+        console.error(error);
       }
-      onClose();
     }
+  };
+
+  const updateLeagueTeams = async (leagueId: string) => {
+    const currentTeams = await leagueTeamService.getTeamsByLeagueId(leagueId);
+    const currentTeamIds = currentTeams.map((t) => t.teamId);
+
+    // Remove teams
+    for (const teamId of currentTeamIds) {
+      if (!selectedTeams.includes(teamId)) {
+        await leagueService.removeTeamFromLeague(leagueId, teamId);
+      }
+    }
+
+    // Add teams
+    for (const teamId of selectedTeams) {
+      if (!currentTeamIds.includes(teamId)) {
+        await leagueService.addTeamToLeague(leagueId, teamId);
+      }
+    }
+  };
+
+  const addTeamsToLeague = async (leagueId: string) => {
+    await Promise.all(selectedTeams.map((teamId) => leagueService.addTeamToLeague(leagueId, teamId)));
   };
 
   return (
@@ -108,11 +120,7 @@ export function LeagueForm({ onClose, initialData }: LeagueFormProps) {
         </label>
       </div>
 
-      <TeamSelector 
-        selectedTeams={selectedTeams} 
-        onTeamsChange={setSelectedTeams}
-        currentLeagueId={initialData?.id}
-      />
+      <TeamSelector selectedTeams={selectedTeams} onTeamsChange={setSelectedTeams} currentLeagueId={initialData?.id} />
 
       <div className="flex justify-end space-x-3 pt-4 border-t">
         <button
@@ -127,7 +135,7 @@ export function LeagueForm({ onClose, initialData }: LeagueFormProps) {
           className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
         >
           <PlusCircle className="w-4 h-4 mr-2" />
-          {initialData ? 'Update League' : 'Create League'}
+          {initialData ? "Update League" : "Create League"}
         </button>
       </div>
     </form>

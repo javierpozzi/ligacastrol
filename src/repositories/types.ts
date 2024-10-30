@@ -8,17 +8,16 @@ export interface Repository<T> {
   delete(id: string): Promise<void>;
 }
 
-export interface TeamRepository extends Repository<Team> {}
-
-export interface LeagueRepository extends Repository<League> {}
+export type TeamRepository = Repository<Team>;
+export type LeagueRepository = Repository<League>;
+export type LocationRepository = Repository<Location>;
 
 export interface MatchRepository extends Repository<Match> {
   getByLeagueId(leagueId: string): Promise<Match[]>;
 }
 
-export interface LocationRepository extends Repository<Location> {}
-
 export interface LeagueTeamRepository extends Repository<LeagueTeam> {
   getByLeagueId(leagueId: string): Promise<LeagueTeam[]>;
   getByLeagueAndTeam(leagueId: string, teamId: string): Promise<LeagueTeam | null>;
+  getAllTeamsForLeague(leagueId: string): Promise<Team[]>;
 }

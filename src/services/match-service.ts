@@ -1,5 +1,5 @@
-import { LeagueTeamRepository, MatchRepository } from "../repositories/types";
-import { Match } from "../types";
+import { MatchRepository, LeagueTeamRepository } from "../repositories/types";
+import { Match, LeagueTeam } from "../types";
 import { EntityNotFoundError } from "../utils/error";
 
 export class MatchService {
@@ -7,6 +7,22 @@ export class MatchService {
 
   async getAllMatches(): Promise<Match[]> {
     return this.repository.getAll();
+  }
+
+  async getByLeagueId(leagueId: string): Promise<Match[]> {
+    return this.repository.getByLeagueId(leagueId);
+  }
+
+  async updateMatch(id: string, data: Partial<Omit<Match, "id">>): Promise<Match> {
+    const oldMatch = await this.getMatchById(id);
+    const newMatch = { ...oldMatch, ...data };
+
+    // Check if we need to update team stats
+    if (this.shouldUpdateStats(oldMatch, newMatch)) {
+      await this.updateTeamStats(oldMatch, newMatch);
+    }
+
+    return this.repository.update(id, data);
   }
 
   async getMatchById(id: string): Promise<Match> {
@@ -27,27 +43,12 @@ export class MatchService {
     return this.repository.create(match);
   }
 
-  async updateMatch(id: string, updates: Partial<Omit<Match, "id">>): Promise<void> {
-    const match = await this.getMatchById(id);
-    const updatedMatch = { ...match, ...updates };
-
-    if (this.shouldUpdateStats(match, updatedMatch)) {
-      await this.updateTeamStats(match, updatedMatch);
-    }
-
-    await this.repository.update(id, updates);
-  }
-
   async deleteMatch(id: string): Promise<void> {
     await this.repository.delete(id);
   }
 
-  async getMatchesByLeagueId(leagueId: string): Promise<Match[]> {
-    return this.repository.getByLeagueId(leagueId);
-  }
-
   async clearLeagueFixtures(leagueId: string): Promise<void> {
-    const matches = await this.getMatchesByLeagueId(leagueId);
+    const matches = await this.getByLeagueId(leagueId);
     await Promise.all(matches.map((match) => this.deleteMatch(match.id)));
   }
 
@@ -62,8 +63,8 @@ export class MatchService {
 
   private async updateTeamStats(oldMatch: Match, newMatch: Match): Promise<void> {
     const leagueTeams = await this.leagueTeamRepository.getByLeagueId(newMatch.leagueId);
-    const homeTeam = leagueTeams.find((lt) => lt.teamId === newMatch.homeTeamId);
-    const awayTeam = leagueTeams.find((lt) => lt.teamId === newMatch.awayTeamId);
+    const homeTeam = leagueTeams.find((lt: LeagueTeam) => lt.teamId === newMatch.homeTeamId);
+    const awayTeam = leagueTeams.find((lt: LeagueTeam) => lt.teamId === newMatch.awayTeamId);
 
     if (!homeTeam || !awayTeam) throw new Error("Teams not found in league");
 

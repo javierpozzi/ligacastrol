@@ -4,6 +4,7 @@ import { EntityNotFoundError } from "../utils/error";
 import { generateFixtures } from "../utils/fixtures";
 import { MatchService } from "./match-service";
 import { LeagueTeamService } from "./league-team-service";
+import { LeagueTeam } from "../types";
 
 export class LeagueService {
   constructor(
@@ -57,5 +58,20 @@ export class LeagueService {
         status: "scheduled",
       });
     }
+  }
+
+  async addTeamToLeague(leagueId: string, teamId: string): Promise<void> {
+    await this.leagueTeamService.addTeamToLeague(leagueId, teamId);
+  }
+
+  async removeTeamFromLeague(leagueId: string, teamId: string): Promise<void> {
+    const leagueTeam = await this.leagueTeamService.getByLeagueAndTeam(leagueId, teamId);
+    if (leagueTeam) {
+      await this.leagueTeamService.removeTeamFromLeague(leagueTeam.id);
+    }
+  }
+
+  async getLeagueTeams(leagueId: string): Promise<LeagueTeam[]> {
+    return this.leagueTeamService.getTeamsByLeagueId(leagueId);
   }
 }

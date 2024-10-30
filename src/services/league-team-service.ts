@@ -1,4 +1,4 @@
-import { LeagueTeam } from "../types";
+import { LeagueTeam, Team } from "../types";
 import { LeagueTeamRepository } from "../repositories/types";
 import { EntityNotFoundError } from "../utils/error";
 
@@ -61,5 +61,20 @@ export class LeagueTeamService {
       // If everything is equal, sort by team ID for consistency
       return a.teamId.localeCompare(b.teamId);
     });
+  }
+
+  async getByLeagueAndTeam(leagueId: string, teamId: string): Promise<LeagueTeam | null> {
+    return this.repository.getByLeagueAndTeam(leagueId, teamId);
+  }
+
+  async getAllTeamsForLeague(leagueId: string): Promise<Team[]> {
+    return this.repository.getAllTeamsForLeague(leagueId);
+  }
+
+  async updateTeamStats(
+    id: string,
+    stats: Partial<Omit<LeagueTeam, "id" | "leagueId" | "teamId">>
+  ): Promise<LeagueTeam> {
+    return this.repository.update(id, stats);
   }
 }

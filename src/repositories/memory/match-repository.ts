@@ -14,14 +14,18 @@ export class InMemoryMatchRepository implements MatchRepository {
   }
 
   async create(match: Omit<Match, "id">): Promise<Match> {
-    const id = crypto.randomUUID();
-    const newMatch = { ...match, id };
+    try {
+      const id = crypto.randomUUID();
+      const newMatch = { ...match, id };
 
-    useStore.setState((state) => ({
-      matches: [...state.matches, newMatch],
-    }));
+      useStore.setState((state) => ({
+        matches: [...state.matches, newMatch],
+      }));
 
-    return newMatch;
+      return newMatch;
+    } catch {
+      throw new Error("Failed to create match");
+    }
   }
 
   async update(id: string, updates: Partial<Omit<Match, "id">>): Promise<Match> {

@@ -1,9 +1,9 @@
-import React from 'react';
-import { useStore } from '../../store';
-import { format } from 'date-fns';
-import toast from 'react-hot-toast';
-import { MatchService } from '../../services/match-service';
-import { RepositoryFactory } from '../../repositories/factory';
+import React from "react";
+import { useStore } from "../../store";
+import { format } from "date-fns";
+import toast from "react-hot-toast";
+import { MatchService } from "../../services/match-service";
+import { RepositoryFactory } from "../../repositories/factory";
 
 interface MatchEditorProps {
   matchId: string;
@@ -12,61 +12,61 @@ interface MatchEditorProps {
 
 export function MatchEditor({ matchId, onClose }: MatchEditorProps) {
   const { matches, locations, teams } = useStore();
-  const match = matches.find(m => m.id === matchId);
-  
+  const match = matches.find((m) => m.id === matchId);
+
   const matchService = new MatchService(
     RepositoryFactory.getMatchRepository(),
     RepositoryFactory.getLeagueTeamRepository()
   );
-  
+
   if (!match) return null;
-  
-  const homeTeam = teams.find(t => t.id === match.homeTeamId);
-  const awayTeam = teams.find(t => t.id === match.awayTeamId);
+
+  const homeTeam = teams.find((t) => t.id === match.homeTeamId);
+  const awayTeam = teams.find((t) => t.id === match.awayTeamId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const locationId = formData.get('locationId') as string;
-    const date = formData.get('date') as string;
-    const time = formData.get('time') as string;
-    const homeScoreStr = formData.get('homeScore') as string;
-    const awayScoreStr = formData.get('awayScore') as string;
-    
+    const locationId = formData.get("locationId") as string;
+    const date = formData.get("date") as string;
+    const time = formData.get("time") as string;
+    const homeScoreStr = formData.get("homeScore") as string;
+    const awayScoreStr = formData.get("awayScore") as string;
+
     const dateTime = date && time ? new Date(`${date}T${time}`).toISOString() : null;
-    
+
     // Check if either both scores are empty or both are valid numbers
-    const homeScore = homeScoreStr === '' ? null : parseInt(homeScoreStr);
-    const awayScore = awayScoreStr === '' ? null : parseInt(awayScoreStr);
-    
+    const homeScore = homeScoreStr === "" ? null : parseInt(homeScoreStr);
+    const awayScore = awayScoreStr === "" ? null : parseInt(awayScoreStr);
+
     // Validate that if one score is provided, both must be provided
     if ((homeScore === null) !== (awayScore === null)) {
-      toast.error('Both scores must be provided to complete a match');
+      toast.error("Both scores must be provided to complete a match");
       return;
     }
 
     // Validate scores are non-negative if provided
     if (homeScore !== null && awayScore !== null && (homeScore < 0 || awayScore < 0)) {
-      toast.error('Scores must be non-negative numbers');
+      toast.error("Scores must be non-negative numbers");
       return;
     }
 
-    const newStatus = (homeScore !== null && awayScore !== null) ? 'completed' : 'scheduled';
+    const newStatus = homeScore !== null && awayScore !== null ? "completed" : "scheduled";
 
     try {
       await matchService.updateMatch(matchId, {
-        locationId: locationId === '' ? null : locationId,
+        locationId: locationId === "" ? null : locationId,
         date: dateTime,
         homeScore,
         awayScore,
-        status: newStatus
+        status: newStatus,
       });
 
-      toast.success('Match details updated successfully');
+      toast.success("Match details updated successfully");
       onClose();
     } catch (error) {
       console.error(error);
-      toast.error('Failed to update match');
+      toast.error("Failed to update match");
     }
   };
 
@@ -81,7 +81,7 @@ export function MatchEditor({ matchId, onClose }: MatchEditorProps) {
             min="0"
             className="mt-2 w-20 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
             placeholder="Goals"
-            defaultValue={match.homeScore ?? ''}
+            defaultValue={match.homeScore ?? ""}
           />
         </div>
         <span>vs</span>
@@ -93,7 +93,7 @@ export function MatchEditor({ matchId, onClose }: MatchEditorProps) {
             min="0"
             className="mt-2 w-20 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
             placeholder="Goals"
-            defaultValue={match.awayScore ?? ''}
+            defaultValue={match.awayScore ?? ""}
           />
         </div>
       </div>
@@ -106,10 +106,10 @@ export function MatchEditor({ matchId, onClose }: MatchEditorProps) {
           id="locationId"
           name="locationId"
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
-          defaultValue={match.locationId ?? ''}
+          defaultValue={match.locationId ?? ""}
         >
           <option value="">Select a location</option>
-          {locations.map(location => (
+          {locations.map((location) => (
             <option key={location.id} value={location.id}>
               {location.name}
             </option>
@@ -127,7 +127,7 @@ export function MatchEditor({ matchId, onClose }: MatchEditorProps) {
             id="date"
             name="date"
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
-            defaultValue={match.date ? format(new Date(match.date), 'yyyy-MM-dd') : ''}
+            defaultValue={match.date ? format(new Date(match.date), "yyyy-MM-dd") : ""}
           />
         </div>
         <div>
@@ -139,7 +139,7 @@ export function MatchEditor({ matchId, onClose }: MatchEditorProps) {
             id="time"
             name="time"
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
-            defaultValue={match.date ? format(new Date(match.date), 'HH:mm') : ''}
+            defaultValue={match.date ? format(new Date(match.date), "HH:mm") : ""}
           />
         </div>
       </div>
@@ -161,4 +161,4 @@ export function MatchEditor({ matchId, onClose }: MatchEditorProps) {
       </div>
     </form>
   );
-} 
+}

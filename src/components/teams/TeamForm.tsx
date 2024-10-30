@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { useStore } from '../../store';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import { RepositoryFactory } from "../../repositories/factory";
 
 interface TeamFormProps {
   onClose: () => void;
@@ -12,20 +13,25 @@ interface TeamFormProps {
 }
 
 export function TeamForm({ onClose, initialData }: TeamFormProps) {
-  const [name, setName] = useState(initialData?.name ?? '');
-  const [logo, setLogo] = useState(initialData?.logo ?? '');
-  const addTeam = useStore(state => state.addTeam);
-  const updateTeam = useStore(state => state.updateTeam);
+  const [name, setName] = useState(initialData?.name ?? "");
+  const [logo, setLogo] = useState(initialData?.logo ?? "");
+  const teamService = useMemo(() => RepositoryFactory.getTeamService(), []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim() && logo.trim()) {
-      if (initialData) {
-        updateTeam(initialData.id, { name, logo });
-      } else {
-        addTeam({ name, logo });
+      try {
+        if (initialData) {
+          await teamService.updateTeam(initialData.id, { name, logo });
+        } else {
+          await teamService.createTeam({ name, logo });
+        }
+        toast.success(`Team ${initialData ? "updated" : "created"} successfully`);
+        onClose();
+      } catch (error) {
+        toast.error(`Failed to ${initialData ? "update" : "create"} team`);
+        console.error(error);
       }
-      onClose();
     }
   };
 
@@ -61,11 +67,7 @@ export function TeamForm({ onClose, initialData }: TeamFormProps) {
       </div>
       {logo && (
         <div className="mt-2">
-          <img
-            src={logo}
-            alt="Logo preview"
-            className="w-16 h-16 object-contain rounded-full border border-gray-200"
-          />
+          <img src={logo} alt="Logo preview" className="w-16 h-16 object-contain rounded-full border border-gray-200" />
         </div>
       )}
       <div className="flex justify-end space-x-3">
@@ -81,7 +83,7 @@ export function TeamForm({ onClose, initialData }: TeamFormProps) {
           className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
         >
           <PlusCircle className="w-4 h-4 mr-2" />
-          {initialData ? 'Update Team' : 'Create Team'}
+          {initialData ? "Update Team" : "Create Team"}
         </button>
       </div>
     </form>

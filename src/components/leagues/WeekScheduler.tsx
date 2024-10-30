@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { useStore } from '../../store';
-import { format } from 'date-fns';
-import toast from 'react-hot-toast';
+import React, { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import { RepositoryFactory } from "../../repositories/factory";
+import { Location, Match } from "../../types";
 
 interface WeekSchedulerProps {
   leagueId: string;
@@ -10,22 +10,34 @@ interface WeekSchedulerProps {
 }
 
 export function WeekScheduler({ leagueId, weekNumber, onClose }: WeekSchedulerProps) {
-  const { matches, locations, updateMatch } = useStore();
-  const [startDate, setStartDate] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [matchDuration, setMatchDuration] = useState(120); // 2 hours in minutes
+  const matchService = useMemo(() => RepositoryFactory.getMatchService(), []);
+  const locationService = useMemo(() => RepositoryFactory.getLocationService(), []);
+  const [startDate, setStartDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [matchDuration, setMatchDuration] = useState(120);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
 
-  const weekMatches = matches.filter(
-    match => match.leagueId === leagueId && match.weekNumber === weekNumber
-  );
+  // Load matches and locations
+  useEffect(() => {
+    const loadData = async () => {
+      const [matchesData, locationsData] = await Promise.all([
+        matchService.getByLeagueId(leagueId),
+        locationService.getAllLocations(),
+      ]);
+      setMatches(matchesData.filter((m: Match) => m.weekNumber === weekNumber));
+      setLocations(locationsData);
+    };
+    loadData();
+  }, [leagueId, weekNumber, matchService, locationService]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!startDate || !startTime || !endTime || selectedLocationIds.length === 0) {
-      toast.error('Please fill in all required fields');
+      toast.error("Please fill in all required fields");
       return;
     }
 
@@ -33,7 +45,7 @@ export function WeekScheduler({ leagueId, weekNumber, onClose }: WeekSchedulerPr
     const endDateTime = new Date(`${startDate}T${endTime}`);
 
     if (endDateTime <= startDateTime) {
-      toast.error('End time must be after start time');
+      toast.error("End time must be after start time");
       return;
     }
 
@@ -41,44 +53,49 @@ export function WeekScheduler({ leagueId, weekNumber, onClose }: WeekSchedulerPr
     const availableSlots: { time: Date; locationId: string }[] = [];
     const durationInMs = matchDuration * 60 * 1000; // Convert minutes to milliseconds
 
-    selectedLocationIds.forEach(locationId => {
+    selectedLocationIds.forEach((locationId) => {
       let currentTime = startDateTime;
       while (currentTime <= endDateTime) {
         availableSlots.push({
           time: new Date(currentTime),
-          locationId
+          locationId,
         });
         currentTime = new Date(currentTime.getTime() + durationInMs);
       }
     });
 
-    if (availableSlots.length < weekMatches.length) {
-      toast.error('Not enough time slots available for all matches');
+    if (availableSlots.length < matches.length) {
+      toast.error("Not enough time slots available for all matches");
       return;
     }
 
     // Shuffle available slots to randomize assignment
     const shuffledSlots = [...availableSlots].sort(() => Math.random() - 0.5);
 
-    // Assign matches to time slots
-    weekMatches.forEach((match, index) => {
-      const slot = shuffledSlots[index];
-      updateMatch(match.id, {
-        date: slot.time.toISOString(),
-        locationId: slot.locationId
-      });
-    });
+    try {
+      // Assign matches to time slots
+      await Promise.all(
+        matches.map((match, index) => {
+          const slot = shuffledSlots[index];
+          return matchService.updateMatch(match.id, {
+            date: slot.time.toISOString(),
+            locationId: slot.locationId,
+          });
+        })
+      );
 
-    toast.success('Match schedule generated successfully');
-    onClose();
+      toast.success("Match schedule generated successfully");
+      onClose();
+    } catch (error) {
+      toast.error("Failed to update match schedule");
+      console.error(error);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Date
-        </label>
+        <label className="block text-sm font-medium text-gray-700">Date</label>
         <input
           type="date"
           value={startDate}
@@ -90,9 +107,7 @@ export function WeekScheduler({ leagueId, weekNumber, onClose }: WeekSchedulerPr
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Start Time
-          </label>
+          <label className="block text-sm font-medium text-gray-700">Start Time</label>
           <input
             type="time"
             value={startTime}
@@ -102,9 +117,7 @@ export function WeekScheduler({ leagueId, weekNumber, onClose }: WeekSchedulerPr
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            End Time
-          </label>
+          <label className="block text-sm font-medium text-gray-700">End Time</label>
           <input
             type="time"
             value={endTime}
@@ -116,9 +129,7 @@ export function WeekScheduler({ leagueId, weekNumber, onClose }: WeekSchedulerPr
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Match Duration (minutes)
-        </label>
+        <label className="block text-sm font-medium text-gray-700">Match Duration (minutes)</label>
         <input
           type="number"
           value={matchDuration}
@@ -131,11 +142,9 @@ export function WeekScheduler({ leagueId, weekNumber, onClose }: WeekSchedulerPr
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Available Locations
-        </label>
+        <label className="block text-sm font-medium text-gray-700">Available Locations</label>
         <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
-          {locations.map(location => (
+          {locations.map((location) => (
             <label key={location.id} className="flex items-center">
               <input
                 type="checkbox"
@@ -144,7 +153,7 @@ export function WeekScheduler({ leagueId, weekNumber, onClose }: WeekSchedulerPr
                   setSelectedLocationIds(
                     e.target.checked
                       ? [...selectedLocationIds, location.id]
-                      : selectedLocationIds.filter(id => id !== location.id)
+                      : selectedLocationIds.filter((id) => id !== location.id)
                   );
                 }}
                 className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
@@ -172,4 +181,4 @@ export function WeekScheduler({ leagueId, weekNumber, onClose }: WeekSchedulerPr
       </div>
     </form>
   );
-} 
+}

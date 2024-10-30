@@ -22,7 +22,7 @@ export function MatchWeeks({ leagueId, onBack }: MatchWeeksProps) {
   const loadMatches = useCallback(async () => {
     try {
       setLoading(true);
-      const matchData = await matchService.getMatchesByLeagueId(leagueId);
+      const matchData = await matchService.getByLeagueId(leagueId);
       setMatches(matchData);
       setError(null);
     } catch (err) {

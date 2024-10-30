@@ -1,4 +1,4 @@
-import { LeagueTeam } from "../../types";
+import { LeagueTeam, Team } from "../../types";
 import { LeagueTeamRepository } from "../types";
 import { useStore } from "../../store";
 import { EntityNotFoundError } from "../../utils/error";
@@ -47,5 +47,11 @@ export class InMemoryLeagueTeamRepository implements LeagueTeamRepository {
   async getByLeagueAndTeam(leagueId: string, teamId: string): Promise<LeagueTeam | null> {
     const leagueTeam = useStore.getState().leagueTeams.find((lt) => lt.leagueId === leagueId && lt.teamId === teamId);
     return leagueTeam || null;
+  }
+
+  async getAllTeamsForLeague(leagueId: string): Promise<Team[]> {
+    const store = useStore.getState();
+    const leagueTeams = store.leagueTeams.filter((lt) => lt.leagueId === leagueId);
+    return store.teams.filter((team) => leagueTeams.some((lt) => lt.teamId === team.id));
   }
 }
