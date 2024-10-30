@@ -2,17 +2,44 @@ import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store';
 import { ArrowLeft, Trophy } from 'lucide-react';
+import { format } from "date-fns";
+import { Match } from "../../types";
+import { RepositoryFactory } from "../../repositories/factory";
+import { useEffect, useState } from "react";
 
 export function TeamDetails() {
   const { teamId } = useParams<{ teamId: string }>();
   const navigate = useNavigate();
-  const { teams, leagues, leagueTeams } = useStore();
+  const { teams, leagues, leagueTeams, locations } = useStore();
+  const [matches, setMatches] = useState<Match[]>([]);
 
   const team = teams.find(t => t.id === teamId);
-  
+
+  useEffect(() => {
+    const loadMatches = async () => {
+      if (!teamId) return;
+      const matchService = RepositoryFactory.getMatchService();
+      const allMatches = await matchService.getAllMatches();
+      setMatches(allMatches.filter(m => m.homeTeamId === teamId || m.awayTeamId === teamId));
+    };
+    loadMatches();
+  }, [teamId]);
+
   if (!team) {
     return <div>Team not found</div>;
   }
+
+  // Get upcoming and past matches
+  const now = new Date();
+  const upcomingMatches = matches
+    .filter(m => m.status === "scheduled" && m.date && new Date(m.date) > now)
+    .sort((a, b) => new Date(a.date!).getTime() - new Date(b.date!).getTime())
+    .slice(0, 5);
+
+  const recentMatches = matches
+    .filter(m => m.status === "completed")
+    .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime())
+    .slice(0, 5);
 
   // Get all league participations for this team
   const teamParticipations = leagueTeams
@@ -53,6 +80,100 @@ export function TeamDetails() {
             className="w-32 h-32 rounded-full"
           />
           <h1 className="text-3xl font-bold text-gray-900">{team.name}</h1>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Upcoming Matches */}
+        <div className="space-y-4">
+          <h3 className="text-xl font-semibold text-gray-900">Upcoming Matches</h3>
+          <div className="bg-white shadow rounded-lg divide-y">
+            {upcomingMatches.map(match => {
+              const homeTeam = teams.find(t => t.id === match.homeTeamId)!;
+              const awayTeam = teams.find(t => t.id === match.awayTeamId)!;
+              const location = match.locationId ? locations.find(l => l.id === match.locationId) : null;
+              const league = leagues.find(l => l.id === match.leagueId)!;
+
+              return (
+                <div key={match.id} className="p-4">
+                  <div className="text-sm text-gray-500 mb-1">
+                    {league.name} - Week {match.weekNumber}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <span className={`font-medium ${match.homeTeamId === teamId ? 'text-blue-600' : ''}`}>
+                        {homeTeam.name}
+                      </span>
+                      <span className="text-gray-500">vs</span>
+                      <span className={`font-medium ${match.awayTeamId === teamId ? 'text-blue-600' : ''}`}>
+                        {awayTeam.name}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {match.date && format(new Date(match.date), "dd/MM/yyyy HH:mm")}
+                    </div>
+                  </div>
+                  {location && (
+                    <div className="text-sm text-gray-500 mt-1">
+                      📍 {location.name}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {upcomingMatches.length === 0 && (
+              <div className="p-4 text-gray-500 text-center">
+                No upcoming matches scheduled
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Results */}
+        <div className="space-y-4">
+          <h3 className="text-xl font-semibold text-gray-900">Recent Results</h3>
+          <div className="bg-white shadow rounded-lg divide-y">
+            {recentMatches.map(match => {
+              const homeTeam = teams.find(t => t.id === match.homeTeamId)!;
+              const awayTeam = teams.find(t => t.id === match.awayTeamId)!;
+              const league = leagues.find(l => l.id === match.leagueId)!;
+              const isWin = 
+                (match.homeTeamId === teamId && match.homeScore! > match.awayScore!) ||
+                (match.awayTeamId === teamId && match.awayScore! > match.homeScore!);
+              const isDraw = match.homeScore === match.awayScore;
+
+              return (
+                <div key={match.id} className="p-4">
+                  <div className="text-sm text-gray-500 mb-1">
+                    {league.name} - Week {match.weekNumber}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <span className={`font-medium ${match.homeTeamId === teamId ? 'text-blue-600' : ''}`}>
+                        {homeTeam.name}
+                      </span>
+                      <span className="font-medium">
+                        {match.homeScore} - {match.awayScore}
+                      </span>
+                      <span className={`font-medium ${match.awayTeamId === teamId ? 'text-blue-600' : ''}`}>
+                        {awayTeam.name}
+                      </span>
+                    </div>
+                    <div className={`text-sm font-medium ${
+                      isWin ? 'text-green-600' : isDraw ? 'text-gray-500' : 'text-red-600'
+                    }`}>
+                      {isWin ? 'Won' : isDraw ? 'Draw' : 'Lost'}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {recentMatches.length === 0 && (
+              <div className="p-4 text-gray-500 text-center">
+                No recent matches played
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
