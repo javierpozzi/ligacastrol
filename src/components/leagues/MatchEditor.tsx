@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStore } from '../../store';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 
 interface MatchEditorProps {
   matchId: string;
@@ -8,7 +9,7 @@ interface MatchEditorProps {
 }
 
 export function MatchEditor({ matchId, onClose }: MatchEditorProps) {
-  const { matches, locations, teams, updateMatch } = useStore();
+  const { matches, locations, teams, updateMatch, updateTeamStats } = useStore();
   const match = matches.find(m => m.id === matchId);
   
   if (!match) return null;
@@ -22,23 +23,79 @@ export function MatchEditor({ matchId, onClose }: MatchEditorProps) {
     const locationId = formData.get('locationId') as string;
     const date = formData.get('date') as string;
     const time = formData.get('time') as string;
+    const homeScoreStr = formData.get('homeScore') as string;
+    const awayScoreStr = formData.get('awayScore') as string;
     
     const dateTime = date && time ? new Date(`${date}T${time}`).toISOString() : null;
     
+    // Check if either both scores are empty or both are valid numbers
+    const homeScore = homeScoreStr === '' ? null : parseInt(homeScoreStr);
+    const awayScore = awayScoreStr === '' ? null : parseInt(awayScoreStr);
+    
+    // Validate that if one score is provided, both must be provided
+    if ((homeScore === null) !== (awayScore === null)) {
+      toast.error('Both scores must be provided to complete a match');
+      return;
+    }
+
+    // Validate scores are non-negative if provided
+    if (homeScore !== null && awayScore !== null && (homeScore < 0 || awayScore < 0)) {
+      toast.error('Scores must be non-negative numbers');
+      return;
+    }
+
+    const oldStatus = match.status;
+    const newStatus = (homeScore !== null && awayScore !== null) ? 'completed' : 'scheduled';
+    
+    // If match was previously completed, reverse the old stats
+    if (oldStatus === 'completed' && match.homeScore !== null && match.awayScore !== null) {
+      updateTeamStats(match.homeTeamId, match.awayTeamId, match.homeScore, match.awayScore, true);
+    }
+
+    // Update match details
     updateMatch(matchId, {
       locationId: locationId === '' ? null : locationId,
-      date: dateTime
+      date: dateTime,
+      homeScore,
+      awayScore,
+      status: newStatus
     });
-    
+
+    // Only update team stats if the match is being completed with scores
+    if (newStatus === 'completed' && homeScore !== null && awayScore !== null) {
+      updateTeamStats(match.homeTeamId, match.awayTeamId, homeScore, awayScore);
+    }
+
+    toast.success('Match details updated successfully');
     onClose();
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="flex items-center justify-center space-x-4 text-lg font-medium">
-        <span>{homeTeam?.name}</span>
+        <div className="flex flex-col items-center">
+          <span>{homeTeam?.name}</span>
+          <input
+            type="number"
+            name="homeScore"
+            min="0"
+            className="mt-2 w-20 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+            placeholder="Goals"
+            defaultValue={match.homeScore ?? ''}
+          />
+        </div>
         <span>vs</span>
-        <span>{awayTeam?.name}</span>
+        <div className="flex flex-col items-center">
+          <span>{awayTeam?.name}</span>
+          <input
+            type="number"
+            name="awayScore"
+            min="0"
+            className="mt-2 w-20 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
+            placeholder="Goals"
+            defaultValue={match.awayScore ?? ''}
+          />
+        </div>
       </div>
 
       <div>

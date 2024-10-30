@@ -36,11 +36,17 @@ export function FixtureList({ leagueId, weekNumber }: FixtureListProps) {
                       <div className="flex items-center">
                         <img src={homeTeam?.logo} alt={homeTeam?.name} className="w-8 h-8 rounded-full" />
                         <span className="ml-2 font-medium">{homeTeam?.name}</span>
+                        {match.status === 'completed' && (
+                          <span className="ml-2 font-bold">{match.homeScore}</span>
+                        )}
                       </div>
                       <span className="text-sm text-gray-500">vs</span>
                       <div className="flex items-center">
                         <img src={awayTeam?.logo} alt={awayTeam?.name} className="w-8 h-8 rounded-full" />
                         <span className="ml-2 font-medium">{awayTeam?.name}</span>
+                        {match.status === 'completed' && (
+                          <span className="ml-2 font-bold">{match.awayScore}</span>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center space-x-4">
