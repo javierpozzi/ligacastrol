@@ -1,5 +1,5 @@
-import React from 'react';
-import { Trophy, Users, MapPin, Database } from 'lucide-react';
+import React, { useState } from 'react';
+import { Trophy, Users, MapPin, Database, X, Menu } from 'lucide-react';
 import { useStore } from '../store';
 import toast from 'react-hot-toast';
 
@@ -9,16 +9,17 @@ interface NavbarProps {
 }
 
 export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { addTeam, addLeague, addLocation, generateLeagueFixtures } = useStore();
 
   const populateDemoData = () => {
     // Add teams
     const teamNames = [
-      'Red Dragons', 'Blue Eagles', 'Green Lions', 'Yellow Tigers', 
-      'Black Panthers', 'White Hawks', 'Purple Knights', 'Orange Warriors',
-      'Silver Wolves', 'Golden Bears', 'Bronze Bulls', 'Platinum Phoenix',
-      'Crystal Cobras', 'Ruby Raptors', 'Sapphire Sharks', 'Emerald Eagles',
-      'Diamond Dragons', 'Pearl Pirates', 'Jade Jaguars', 'Amber Arrows'
+      'Dragones Rojos', 'Águilas Azules', 'Leones Verdes', 'Tigres Amarillos', 
+      'Panteras Negras', 'Halcones Blancos', 'Caballeros Púrpura', 'Guerreros Naranjas',
+      'Lobos Plateados', 'Osos Dorados', 'Toros de Bronce', 'Fénix de Platino',
+      'Cobras de Cristal', 'Raptores Rubí', 'Tiburones Zafiro', 'Águilas Esmeralda',
+      'Dragones Diamante', 'Piratas Perla', 'Jaguares Jade', 'Flechas Ámbar'
     ];
 
     const teams = teamNames.map(name => ({
@@ -32,7 +33,7 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
     });
 
     // Add leagues
-    const leagueNames = ['Premier Division', 'Championship', 'Elite League'];
+    const leagueNames = ['División Premier', 'Campeonato', 'Liga Élite'];
     const teamsPerLeague = Math.floor(teamIds.length / leagueNames.length);
     
     let currentTeamIndex = 0;
@@ -48,18 +49,18 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
 
     // Add locations
     const locations = [
-      { name: 'Central Stadium', address: '123 Main Street, Downtown' },
-      { name: 'Sports Complex Arena', address: '456 Athletic Drive, Sportstown' },
-      { name: 'Victory Field', address: '789 Championship Road, Winnersville' },
-      { name: 'Unity Park Stadium', address: '321 Community Blvd, Unitycity' },
-      { name: 'Elite Center', address: '654 Pro Avenue, Eliteville' }
+      { name: 'Estadio Central', address: 'Calle Principal 123, Centro' },
+      { name: 'Arena Complejo Deportivo', address: 'Avenida Atlética 456, Ciudad Deportiva' },
+      { name: 'Campo Victoria', address: 'Calle Campeonato 789, Villa Victoria' },
+      { name: 'Estadio Parque Unidad', address: 'Boulevard Comunidad 321, Ciudad Unida' },
+      { name: 'Centro Élite', address: 'Avenida Pro 654, Villa Élite' }
     ];
 
     locations.forEach(location => {
       addLocation(location);
     });
 
-    toast.success('Demo data populated successfully!');
+    toast.success('Datos demo poblados exitosamente!');
   };
 
   return (
@@ -71,7 +72,8 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
               <Trophy className="h-8 w-8 text-green-600" />
               <span className="ml-2 text-xl font-bold text-gray-900">Liga Castrol</span>
             </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+            {/* Desktop Navigation */}
+            <div className="hidden md:ml-6 md:flex md:space-x-8">
               <button
                 onClick={() => setActiveTab('leagues')}
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
@@ -81,7 +83,7 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
                 }`}
               >
                 <Trophy className="h-4 w-4 mr-2" />
-                Leagues
+                Ligas
               </button>
               <button
                 onClick={() => setActiveTab('teams')}
@@ -92,7 +94,7 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
                 }`}
               >
                 <Users className="h-4 w-4 mr-2" />
-                Teams
+                Equipos
               </button>
               <button
                 onClick={() => setActiveTab('locations')}
@@ -103,19 +105,93 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
                 }`}
               >
                 <MapPin className="h-4 w-4 mr-2" />
-                Locations
+                Ubicaciones
               </button>
             </div>
           </div>
-          <div className="flex items-center">
+          
+          {/* Mobile menu button */}
+          <div className="flex items-center md:hidden">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+            >
+              {isMobileMenuOpen ? (
+                <X className="block h-6 w-6" />
+              ) : (
+                <Menu className="block h-6 w-6" />
+              )}
+            </button>
+          </div>
+
+          {/* Demo data button */}
+          <div className="hidden md:flex md:items-center">
             <button
               onClick={populateDemoData}
               className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700"
             >
               <Database className="h-4 w-4 mr-2" />
-              Demo Data
+              Datos Demo
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      <div className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:hidden`}>
+        <div className="pt-2 pb-3 space-y-1">
+          <button
+            onClick={() => {
+              setActiveTab('leagues');
+              setIsMobileMenuOpen(false);
+            }}
+            className={`w-full flex items-center px-3 py-2 text-base font-medium ${
+              activeTab === 'leagues'
+                ? 'bg-green-50 border-l-4 border-green-500 text-green-700'
+                : 'text-gray-600 hover:bg-gray-50 hover:border-l-4 hover:border-gray-300'
+            }`}
+          >
+            <Trophy className="h-5 w-5 mr-3" />
+            Ligas
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('teams');
+              setIsMobileMenuOpen(false);
+            }}
+            className={`w-full flex items-center px-3 py-2 text-base font-medium ${
+              activeTab === 'teams'
+                ? 'bg-green-50 border-l-4 border-green-500 text-green-700'
+                : 'text-gray-600 hover:bg-gray-50 hover:border-l-4 hover:border-gray-300'
+            }`}
+          >
+            <Users className="h-5 w-5 mr-3" />
+            Equipos
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('locations');
+              setIsMobileMenuOpen(false);
+            }}
+            className={`w-full flex items-center px-3 py-2 text-base font-medium ${
+              activeTab === 'locations'
+                ? 'bg-green-50 border-l-4 border-green-500 text-green-700'
+                : 'text-gray-600 hover:bg-gray-50 hover:border-l-4 hover:border-gray-300'
+            }`}
+          >
+            <MapPin className="h-5 w-5 mr-3" />
+            Ubicaciones
+          </button>
+          <button
+            onClick={() => {
+              populateDemoData();
+              setIsMobileMenuOpen(false);
+            }}
+            className="w-full flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50"
+          >
+            <Database className="h-5 w-5 mr-3" />
+            Datos Demo
+          </button>
         </div>
       </div>
     </nav>

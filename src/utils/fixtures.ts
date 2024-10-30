@@ -1,9 +1,13 @@
 export function generateFixtures(teams: string[]): Array<{ home: string; away: string }> {
   const fixtures: Array<{ home: string; away: string }> = [];
-  const numberOfTeams = teams.length;
+
+  // Shuffle the teams array
+  const shuffledTeams = [...teams].sort(() => Math.random() - 0.5);
+
+  const numberOfTeams = shuffledTeams.length;
 
   // If odd number of teams, add a bye
-  const teamsToSchedule = numberOfTeams % 2 === 0 ? teams : [...teams, 'bye'];
+  const teamsToSchedule = numberOfTeams % 2 === 0 ? shuffledTeams : [...shuffledTeams, "bye"];
   const totalRounds = teamsToSchedule.length - 1;
   const matchesPerRound = teamsToSchedule.length / 2;
 
@@ -12,7 +16,7 @@ export function generateFixtures(teams: string[]): Array<{ home: string; away: s
       const home = teamsToSchedule[match];
       const away = teamsToSchedule[teamsToSchedule.length - 1 - match];
 
-      if (home !== 'bye' && away !== 'bye') {
+      if (home !== "bye" && away !== "bye") {
         // Randomly decide home/away to make it more interesting
         if (Math.random() > 0.5) {
           fixtures.push({ home, away });

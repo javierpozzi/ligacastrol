@@ -27,32 +27,24 @@ export function FixtureList({ leagueId, weekNumber }: FixtureListProps) {
             return (
               <li key={match.id}>
                 <div className="px-4 py-4 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between">
+                    <div className="flex flex-col md:flex-row md:items-center md:space-x-3 space-y-2 md:space-y-0">
                       <div className="flex items-center">
                         <img src={homeTeam?.logo} alt={homeTeam?.name} className="w-8 h-8 rounded-full" />
                         <span className="ml-2 font-medium">{homeTeam?.name}</span>
                       </div>
-                      <div className="text-center">
-                        {match.status === 'completed' ? (
-                          <span className="text-lg font-bold">
-                            {match.homeScore} - {match.awayScore}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-gray-500">vs</span>
-                        )}
-                      </div>
+                      <span className="text-sm text-gray-500">vs</span>
                       <div className="flex items-center">
                         <img src={awayTeam?.logo} alt={awayTeam?.name} className="w-8 h-8 rounded-full" />
                         <span className="ml-2 font-medium">{awayTeam?.name}</span>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-500 mt-2 md:mt-0">
                       {match.date && (
                         <div>{format(new Date(match.date), 'PPp')}</div>
                       )}
                       {location && (
-                        <div className="text-right">{location.name}</div>
+                        <div className="md:text-right">{location.name}</div>
                       )}
                     </div>
                   </div>

@@ -39,21 +39,21 @@ export function LeagueList() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Leagues</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Ligas</h2>
         <button
           onClick={() => setIsModalOpen(true)}
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
         >
           <PlusCircle className="w-4 h-4 mr-2" />
-          Create League
+          Crear Liga
         </button>
       </div>
 
       {leagues.length === 0 ? (
         <div className="text-center py-12">
           <Trophy className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No leagues</h3>
-          <p className="mt-1 text-sm text-gray-500">Get started by creating a new league.</p>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">Sin ligas</h3>
+          <p className="mt-1 text-sm text-gray-500">Comienza creando una nueva liga.</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -63,7 +63,7 @@ export function LeagueList() {
               onBack={() => setSelectedLeague(null)} 
             />
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {leagues.map(league => (
                 <div
                   key={league.id}
