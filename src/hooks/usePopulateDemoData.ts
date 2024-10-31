@@ -1,12 +1,69 @@
 import { useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { RepositoryFactory } from "../repositories/factory";
+import { useStore } from "../store";
+
+const generateRandomPlayers = (teamId: string) => {
+  const firstNames = [
+    "James",
+    "John",
+    "Robert",
+    "Michael",
+    "William",
+    "David",
+    "Richard",
+    "Joseph",
+    "Thomas",
+    "Chris",
+    "Daniel",
+    "Paul",
+    "Mark",
+    "Donald",
+    "George",
+    "Steven",
+    "Edward",
+    "Brian",
+    "Ronald",
+    "Anthony",
+  ];
+  const lastNames = [
+    "Smith",
+    "Johnson",
+    "Williams",
+    "Brown",
+    "Jones",
+    "Garcia",
+    "Miller",
+    "Davis",
+    "Rodriguez",
+    "Martinez",
+    "Hernandez",
+    "Lopez",
+    "Gonzalez",
+    "Wilson",
+    "Anderson",
+    "Thomas",
+    "Taylor",
+    "Moore",
+    "Jackson",
+    "Martin",
+  ];
+
+  return Array.from({ length: 4 }, () => ({
+    name: `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${
+      lastNames[Math.floor(Math.random() * lastNames.length)]
+    }`,
+    teamId,
+    disabled: false,
+  }));
+};
 
 export function usePopulateDemoData() {
   const teamService = useMemo(() => RepositoryFactory.getTeamService(), []);
   const leagueService = useMemo(() => RepositoryFactory.getLeagueService(), []);
   const locationService = useMemo(() => RepositoryFactory.getLocationService(), []);
   const matchService = useMemo(() => RepositoryFactory.getMatchService(), []);
+  const { addPlayer, addMatchGoal } = useStore();
 
   const populateDemoData = useCallback(async () => {
     try {
@@ -200,6 +257,28 @@ export function usePopulateDemoData() {
         championshipTeams.map((team) => teamService.createTeam(team).then((t) => t.id))
       );
 
+      // Create players for Premier League teams with full player objects
+      const premierLeaguePlayers = await Promise.all(
+        premierLeagueTeamIds.flatMap((teamId) => {
+          const players = generateRandomPlayers(teamId);
+          return players.map(async (player) => {
+            const { id } = await addPlayer(player);
+            return { ...player, id };
+          });
+        })
+      );
+
+      // Create players for Championship teams with full player objects
+      const championshipPlayers = await Promise.all(
+        championshipTeamIds.flatMap((teamId) => {
+          const players = generateRandomPlayers(teamId);
+          return players.map(async (player) => {
+            const { id } = await addPlayer(player);
+            return { ...player, id };
+          });
+        })
+      );
+
       // Add leagues and generate fixtures
       const leagueConfigs = [
         {
@@ -248,18 +327,61 @@ export function usePopulateDemoData() {
         // Add played matches for specified weeks
         if (config.playedWeeks > 0) {
           const matches = await matchService.getByLeagueId(league.id);
+          const allPlayers = config.teamIds.map((teamId) => ({
+            teamId,
+            players:
+              config.name === "Premier League"
+                ? premierLeaguePlayers.filter((p) => p.teamId === teamId)
+                : championshipPlayers.filter((p) => p.teamId === teamId),
+          }));
 
           for (let week = 1; week <= config.playedWeeks; week++) {
             const weekMatches = matches.filter((m) => m.weekNumber === week);
             await Promise.all(
-              weekMatches.map((match) => {
+              weekMatches.map(async (match) => {
                 const homeScore = Math.floor(Math.random() * 5);
                 const awayScore = Math.floor(Math.random() * 5);
                 const randomLocationId = locationIds[Math.floor(Math.random() * locationIds.length)];
                 const matchDate = new Date(config.year, 7 + Math.floor(week / 4), 1 + (week % 4) * 7);
                 matchDate.setHours(Math.random() > 0.5 ? 16 : 20);
 
-                return matchService.updateMatch(match.id, {
+                // First create the goals
+                if (Math.random() < 0.7) {
+                  // 70% chance of recording goals
+                  const homePlayers = allPlayers.find((t) => t.teamId === match.homeTeamId)?.players || [];
+                  const awayPlayers = allPlayers.find((t) => t.teamId === match.awayTeamId)?.players || [];
+
+                  const recordAllGoals = Math.random() < 0.8;
+                  const homeGoalsToRecord = recordAllGoals
+                    ? homeScore
+                    : Math.min(homeScore, Math.floor(Math.random() * (homeScore + 1)));
+                  const awayGoalsToRecord = recordAllGoals
+                    ? awayScore
+                    : Math.min(awayScore, Math.floor(Math.random() * (awayScore + 1)));
+
+                  // Add home team goals
+                  for (let i = 0; i < homeGoalsToRecord; i++) {
+                    const scorer = homePlayers[Math.floor(Math.random() * homePlayers.length)];
+                    addMatchGoal({
+                      matchId: match.id,
+                      teamId: match.homeTeamId,
+                      playerId: scorer?.id,
+                    });
+                  }
+
+                  // Add away team goals
+                  for (let i = 0; i < awayGoalsToRecord; i++) {
+                    const scorer = awayPlayers[Math.floor(Math.random() * awayPlayers.length)];
+                    addMatchGoal({
+                      matchId: match.id,
+                      teamId: match.awayTeamId,
+                      playerId: scorer?.id,
+                    });
+                  }
+                }
+
+                // Then update the match
+                await matchService.updateMatch(match.id, {
                   homeScore,
                   awayScore,
                   status: "completed",
@@ -277,7 +399,7 @@ export function usePopulateDemoData() {
       toast.error("Failed to populate demo data");
       console.error(error);
     }
-  }, [teamService, leagueService, locationService, matchService]);
+  }, [teamService, leagueService, locationService, matchService, addPlayer, addMatchGoal]);
 
   return { populateDemoData };
 }

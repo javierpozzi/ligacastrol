@@ -1,8 +1,10 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { RepositoryFactory } from "../../repositories/factory";
+import { usePlayers } from "../../hooks/usePlayers";
 import { useTeams } from "../../hooks/useTeams";
+import { RepositoryFactory } from "../../repositories/factory";
 import { useStore } from "../../store";
+import { Player } from "../../types";
 
 interface TeamFormProps {
   onClose: () => void;
@@ -24,12 +26,12 @@ export function TeamForm({ onClose, initialData }: TeamFormProps) {
   const [preferredLocationIds, setPreferredLocationIds] = useState<string[]>(
     initialData?.preferences?.preferredLocationIds ?? []
   );
-  const [preferredStartHour, setPreferredStartHour] = useState(
-    initialData?.preferences?.preferredStartHour ?? 9
-  );
-  const [preferredEndHour, setPreferredEndHour] = useState(
-    initialData?.preferences?.preferredEndHour ?? 21
-  );
+  const [preferredStartHour, setPreferredStartHour] = useState(initialData?.preferences?.preferredStartHour ?? 9);
+  const [preferredEndHour, setPreferredEndHour] = useState(initialData?.preferences?.preferredEndHour ?? 21);
+  const [newPlayerName, setNewPlayerName] = useState("");
+  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
+  const [editingPlayerName, setEditingPlayerName] = useState("");
+  const { allPlayers, createPlayer, updatePlayer } = usePlayers(initialData?.id ?? "");
 
   const { reloadTeams } = useTeams();
   const { locations } = useStore();
@@ -62,6 +64,46 @@ export function TeamForm({ onClose, initialData }: TeamFormProps) {
     } catch (error) {
       toast.error(initialData ? "Failed to update team" : "Failed to create team");
     }
+  };
+
+  const handleAddPlayer = () => {
+    if (!newPlayerName.trim()) return;
+
+    createPlayer(newPlayerName.trim());
+    setNewPlayerName("");
+  };
+
+  const handleStartEditPlayer = (player: Player) => {
+    setEditingPlayerId(player.id);
+    setEditingPlayerName(player.name);
+  };
+
+  const handleSavePlayerEdit = (playerId: string) => {
+    const trimmedName = editingPlayerName.trim();
+    if (!trimmedName) return;
+
+    // Check for name overlap with other active players
+    const nameExists = allPlayers.some(
+      (p) => p.id !== playerId && !p.disabled && p.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+
+    if (nameExists) {
+      toast.error("A player with this name already exists");
+      return;
+    }
+
+    updatePlayer(playerId, { name: trimmedName });
+    setEditingPlayerId(null);
+    setEditingPlayerName("");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPlayerId(null);
+    setEditingPlayerName("");
+  };
+
+  const handleTogglePlayerStatus = (player: Player) => {
+    updatePlayer(player.id, { disabled: !player.disabled });
   };
 
   return (
@@ -152,6 +194,86 @@ export function TeamForm({ onClose, initialData }: TeamFormProps) {
               </option>
             ))}
           </select>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Team Players</h3>
+
+        {/* Player list */}
+        <div className="space-y-2">
+          {allPlayers.map((player) => (
+            <div
+              key={player.id}
+              className={`flex justify-between items-center p-2 rounded ${
+                player.disabled ? "bg-gray-100" : "bg-white"
+              }`}
+            >
+              {editingPlayerId === player.id ? (
+                <div className="flex items-center gap-2 flex-1">
+                  <input
+                    type="text"
+                    value={editingPlayerName}
+                    onChange={(e) => setEditingPlayerName(e.target.value)}
+                    className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleSavePlayerEdit(player.id)}
+                    className="text-green-600 hover:text-green-800"
+                  >
+                    Save
+                  </button>
+                  <button type="button" onClick={handleCancelEdit} className="text-gray-600 hover:text-gray-800">
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <span className={player.disabled ? "text-gray-500" : ""}>
+                    {player.name}
+                    {player.disabled && " (Disabled)"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleStartEditPlayer(player)}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePlayerStatus(player)}
+                      className={`${
+                        player.disabled ? "text-green-600 hover:text-green-800" : "text-red-600 hover:text-red-800"
+                      }`}
+                    >
+                      {player.disabled ? "Enable" : "Disable"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Add player form */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newPlayerName}
+            onChange={(e) => setNewPlayerName(e.target.value)}
+            placeholder="Player name"
+            className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+          />
+          <button
+            type="button"
+            onClick={handleAddPlayer}
+            className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+          >
+            Add Player
+          </button>
         </div>
       </div>
 

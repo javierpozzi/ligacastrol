@@ -1,14 +1,14 @@
 import { InMemoryTeamRepository } from "./memory/team-repository";
 import { InMemoryLeagueRepository } from "./memory/league-repository";
-import { InMemoryMatchRepository } from "./memory/match-repository";
-import { InMemoryLocationRepository } from "./memory/location-repository";
-import { InMemoryLeagueTeamRepository } from "./memory/league-team-repository";
 import { TeamRepository, LeagueRepository, MatchRepository, LocationRepository, LeagueTeamRepository } from "./types";
 import { MatchService } from "../services/match-service";
 import { LeagueService } from "../services/league-service";
 import { LeagueTeamService } from "../services/league-team-service";
 import { LocationService } from "../services/location-service";
 import { TeamService } from "../services/team-service";
+import { InMemoryMatchRepository } from "./memory/match-repository";
+import { InMemoryLocationRepository } from "./memory/location-repository";
+import { InMemoryLeagueTeamRepository } from "./memory/league-team-repository";
 
 export class RepositoryFactory {
   private static teamRepository: TeamRepository;

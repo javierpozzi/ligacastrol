@@ -1,4 +1,4 @@
-import { Calendar, Edit2, PlusCircle, Trash2, Trophy, Database } from "lucide-react";
+import { Calendar, Edit2, PlusCircle, Trash2, Trophy, Database, User } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useLeagues } from "../../hooks/useLeagues";
@@ -95,15 +95,23 @@ export default function LeagueList() {
             <div className="mt-4 flex space-x-2">
               <button
                 onClick={() => handleViewStandings(league.id)}
-                className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
+                className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200"
               >
                 <Trophy className="w-4 h-4 mr-1" />
                 Standings
               </button>
 
               <button
+                onClick={() => navigate(`/league/${league.id}/scorers`)}
+                className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
+              >
+                <User className="w-4 h-4 mr-1" />
+                Top Scorers
+              </button>
+
+              <button
                 onClick={() => handleViewFixtures(league.id)}
-                className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200"
+                className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200"
               >
                 <Calendar className="w-4 h-4 mr-1" />
                 Fixtures

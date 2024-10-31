@@ -51,3 +51,17 @@ export interface Match {
   awayScore: number | null;
   status: MatchStatus;
 }
+
+export interface Player {
+  id: string;
+  name: string;
+  teamId: string;
+  disabled: boolean;
+}
+
+export interface MatchGoal {
+  id: string;
+  matchId: string;
+  playerId?: string;
+  teamId: string;
+}

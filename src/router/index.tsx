@@ -1,51 +1,56 @@
-import { createBrowserRouter } from 'react-router-dom';
-import LeagueList from '../components/leagues/LeagueList';
-import { MatchWeeks } from '../components/leagues/MatchWeeks';
-import MatchEditor from '../components/leagues/MatchEditor';
-import { MainLayout } from '../components/layout/MainLayout';
-import { LeagueTable } from '../components/leagues/LeagueTable';
-import { TeamList } from '../components/teams/TeamList';
-import { LocationList } from '../components/locations/LocationList';
-import { NotFound } from '../components/NotFound';
-import { TeamDetails } from '../components/teams/TeamDetails';
+import { createBrowserRouter } from "react-router-dom";
+import LeagueList from "../components/leagues/LeagueList";
+import { MatchWeeks } from "../components/leagues/MatchWeeks";
+import MatchEditor from "../components/leagues/MatchEditor";
+import { MainLayout } from "../components/layout/MainLayout";
+import { LeagueTable } from "../components/leagues/LeagueTable";
+import { TeamList } from "../components/teams/TeamList";
+import { LocationList } from "../components/locations/LocationList";
+import { NotFound } from "../components/NotFound";
+import { TeamDetails } from "../components/teams/TeamDetails";
+import { LeagueTopScorers } from "../components/leagues/LeagueTopScorers";
 
 export const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: <MainLayout />,
     children: [
       {
-        path: '/',
+        path: "/",
         element: <LeagueList />,
       },
       {
-        path: '/teams',
+        path: "/teams",
         element: <TeamList />,
       },
       {
-        path: '/locations',
+        path: "/locations",
         element: <LocationList />,
       },
       {
-        path: '/league/:leagueId',
+        path: "/league/:leagueId",
         element: <MatchWeeks />,
       },
       {
-        path: '/league/:leagueId/match/:matchId',
+        path: "/league/:leagueId/match/:matchId",
         element: <MatchEditor />,
       },
       {
-        path: '/league/:leagueId/standings',
+        path: "/league/:leagueId/standings",
         element: <LeagueTable />,
       },
       {
-        path: '/teams/:teamId',
+        path: "/league/:leagueId/scorers",
+        element: <LeagueTopScorers />,
+      },
+      {
+        path: "/teams/:teamId",
         element: <TeamDetails />,
       },
       {
-        path: '*',
+        path: "*",
         element: <NotFound />,
       },
     ],
   },
-]); 
+]);

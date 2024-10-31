@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Team, League, Location, Match, LeagueTeam } from "../types";
+import { Team, League, Location, Match, LeagueTeam, Player, MatchGoal } from "../types";
 import { generateFixtures } from "../utils/fixtures";
 
 export interface StoreState {
@@ -30,14 +30,26 @@ export interface StoreState {
     teamId: string,
     updates: Partial<Omit<LeagueTeam, "id" | "leagueId" | "teamId">>
   ) => void;
+  players: Player[];
+  matchGoals: MatchGoal[];
+  addPlayer: (player: Omit<Player, "id">) => { id: string };
+  removePlayer: (id: string) => void;
+  addMatchGoal: (goal: Omit<MatchGoal, "id">) => { id: string };
+  updateMatchGoal: (id: string, updates: Partial<MatchGoal>) => void;
+  removeMatchGoal: (id: string) => void;
+  getPlayersByTeam: (teamId: string, includeDisabled?: boolean) => Player[];
+  getMatchGoals: (matchId: string) => MatchGoal[];
+  updatePlayer: (id: string, updates: Partial<Omit<Player, "id" | "teamId">>) => void;
 }
 
 const emptyState = {
   teams: [] as Team[],
-  leagues: [],
-  leagueTeams: [],
-  locations: [],
-  matches: [],
+  leagues: [] as League[],
+  leagueTeams: [] as LeagueTeam[],
+  locations: [] as Location[],
+  matches: [] as Match[],
+  players: [] as Player[],
+  matchGoals: [] as MatchGoal[],
 };
 
 export const useStore = create<StoreState>((set, get) => ({
@@ -295,6 +307,67 @@ export const useStore = create<StoreState>((set, get) => ({
       leagueTeams: state.leagueTeams.map((lt) =>
         lt.leagueId === leagueId && lt.teamId === teamId ? { ...lt, ...updates } : lt
       ),
+    }));
+  },
+
+  addPlayer: (player) => {
+    const id = crypto.randomUUID();
+    set((state) => ({
+      players: [
+        ...state.players,
+        {
+          ...player,
+          id,
+          disabled: false,
+        },
+      ],
+    }));
+    return { id };
+  },
+
+  removePlayer: (id) => {
+    set((state) => ({
+      players: state.players.map((player) => (player.id === id ? { ...player, disabled: true } : player)),
+    }));
+  },
+
+  getPlayersByTeam: (teamId: string, includeDisabled = false) => {
+    return get().players.filter((player) => player.teamId === teamId && (includeDisabled || !player.disabled));
+  },
+
+  addMatchGoal: (goal) => {
+    const id = crypto.randomUUID();
+    set((state) => ({
+      matchGoals: [
+        ...state.matchGoals,
+        {
+          ...goal,
+          id,
+        },
+      ],
+    }));
+    return { id };
+  },
+
+  updateMatchGoal: (id, updates) => {
+    set((state) => ({
+      matchGoals: state.matchGoals.map((goal) => (goal.id === id ? { ...goal, ...updates } : goal)),
+    }));
+  },
+
+  removeMatchGoal: (id) => {
+    set((state) => ({
+      matchGoals: state.matchGoals.filter((goal) => goal.id !== id),
+    }));
+  },
+
+  getMatchGoals: (matchId) => {
+    return get().matchGoals.filter((goal) => goal.matchId === matchId);
+  },
+
+  updatePlayer: (id, updates) => {
+    set((state) => ({
+      players: state.players.map((player) => (player.id === id ? { ...player, ...updates } : player)),
     }));
   },
 }));
