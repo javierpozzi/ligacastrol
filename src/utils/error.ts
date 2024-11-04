@@ -4,8 +4,16 @@ export class ApplicationError extends Error {
   }
 }
 
-export class EntityNotFoundError extends ApplicationError {
+export class EntityNotFoundError extends Error {
   constructor(entity: string, id: string) {
-    super(`${entity} with id ${id} not found`, "ENTITY_NOT_FOUND", 404);
+    super(`${entity} with id ${id} not found`);
+    this.name = "EntityNotFoundError";
+  }
+}
+
+export class AdminAccessRequiredError extends Error {
+  constructor() {
+    super("Admin access required");
+    this.name = "AdminAccessRequiredError";
   }
 }

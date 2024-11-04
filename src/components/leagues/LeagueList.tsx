@@ -135,9 +135,9 @@ export default function LeagueList() {
         ))}
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingLeague ? "Edit League" : "Create League"}>
+      {/* <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingLeague ? "Edit League" : "Create League"}>
         <LeagueForm onClose={handleCloseModal} initialData={editingLeague ?? undefined} />
-      </Modal>
+      </Modal> */}
     </div>
   );
 }

@@ -1,37 +1,57 @@
-import { InMemoryTeamRepository } from "./memory/team-repository";
-import { InMemoryLeagueRepository } from "./memory/league-repository";
-import { TeamRepository, LeagueRepository, MatchRepository, LocationRepository, LeagueTeamRepository } from "./types";
-import { MatchService } from "../services/match-service";
+import { SupabaseLeagueRepository } from "./supabase/league-repository";
+import { SupabaseLeagueTeamRepository } from "./supabase/league-team-repository";
+import { SupabaseMatchGoalRepository } from "./supabase/match-goal-repository";
+import { SupabaseMatchRepository } from "./supabase/match-repository";
+import { SupabasePlayerRepository } from "./supabase/player-repository";
+import { SupabaseTeamRepository } from "./supabase/team-repository";
+import { SupabaseLocationRepository } from "./supabase/location-repository";
+import {
+  LeagueRepository,
+  LeagueTeamRepository,
+  LocationRepository,
+  MatchGoalRepository,
+  MatchRepository,
+  PlayerRepository,
+  TeamRepository,
+} from "./types";
+
 import { LeagueService } from "../services/league-service";
 import { LeagueTeamService } from "../services/league-team-service";
 import { LocationService } from "../services/location-service";
+import { MatchService } from "../services/match-service";
 import { TeamService } from "../services/team-service";
-import { InMemoryMatchRepository } from "./memory/match-repository";
-import { InMemoryLocationRepository } from "./memory/location-repository";
-import { InMemoryLeagueTeamRepository } from "./memory/league-team-repository";
+import { PlayerService } from "../services/player-service";
+import { MatchGoalService } from "../services/match-goal-service";
 
 export class RepositoryFactory {
+  // Repository instances
   private static teamRepository: TeamRepository;
   private static leagueRepository: LeagueRepository;
   private static matchRepository: MatchRepository;
   private static locationRepository: LocationRepository;
   private static leagueTeamRepository: LeagueTeamRepository;
+  private static playerRepository: PlayerRepository;
+  private static matchGoalRepository: MatchGoalRepository;
 
-  private static matchService: MatchService;
-  private static leagueService: LeagueService;
-  private static leagueTeamService: LeagueTeamService;
-  private static locationService: LocationService;
+  // Service instances
   private static teamService: TeamService;
+  private static leagueService: LeagueService;
+  private static matchService: MatchService;
+  private static locationService: LocationService;
+  private static leagueTeamService: LeagueTeamService;
+  private static playerService: PlayerService;
+  private static matchGoalService: MatchGoalService;
 
-  private static handleInitError(error: unknown, repositoryName: string): never {
-    console.error(`Failed to initialize ${repositoryName}:`, error);
-    throw new Error(`Failed to initialize ${repositoryName}`);
+  private static handleInitError(error: unknown, name: string): never {
+    console.error(`Failed to initialize ${name}:`, error);
+    throw new Error(`Failed to initialize ${name}`);
   }
 
+  // Repository getters
   static getTeamRepository(): TeamRepository {
     try {
       if (!this.teamRepository) {
-        this.teamRepository = new InMemoryTeamRepository();
+        this.teamRepository = new SupabaseTeamRepository();
       }
       return this.teamRepository;
     } catch (error) {
@@ -42,7 +62,7 @@ export class RepositoryFactory {
   static getLeagueRepository(): LeagueRepository {
     try {
       if (!this.leagueRepository) {
-        this.leagueRepository = new InMemoryLeagueRepository();
+        this.leagueRepository = new SupabaseLeagueRepository();
       }
       return this.leagueRepository;
     } catch (error) {
@@ -53,7 +73,7 @@ export class RepositoryFactory {
   static getMatchRepository(): MatchRepository {
     try {
       if (!this.matchRepository) {
-        this.matchRepository = new InMemoryMatchRepository();
+        this.matchRepository = new SupabaseMatchRepository();
       }
       return this.matchRepository;
     } catch (error) {
@@ -64,7 +84,7 @@ export class RepositoryFactory {
   static getLocationRepository(): LocationRepository {
     try {
       if (!this.locationRepository) {
-        this.locationRepository = new InMemoryLocationRepository();
+        this.locationRepository = new SupabaseLocationRepository();
       }
       return this.locationRepository;
     } catch (error) {
@@ -75,7 +95,7 @@ export class RepositoryFactory {
   static getLeagueTeamRepository(): LeagueTeamRepository {
     try {
       if (!this.leagueTeamRepository) {
-        this.leagueTeamRepository = new InMemoryLeagueTeamRepository();
+        this.leagueTeamRepository = new SupabaseLeagueTeamRepository();
       }
       return this.leagueTeamRepository;
     } catch (error) {
@@ -83,43 +103,107 @@ export class RepositoryFactory {
     }
   }
 
-  static getMatchService(): MatchService {
-    if (!this.matchService) {
-      this.matchService = new MatchService(this.getMatchRepository(), this.getLeagueTeamRepository());
+  static getPlayerRepository(): PlayerRepository {
+    try {
+      if (!this.playerRepository) {
+        this.playerRepository = new SupabasePlayerRepository();
+      }
+      return this.playerRepository;
+    } catch (error) {
+      this.handleInitError(error, "PlayerRepository");
     }
-    return this.matchService;
   }
 
-  static getLeagueTeamService(): LeagueTeamService {
-    if (!this.leagueTeamService) {
-      this.leagueTeamService = new LeagueTeamService(this.getLeagueTeamRepository());
+  static getMatchGoalRepository(): MatchGoalRepository {
+    try {
+      if (!this.matchGoalRepository) {
+        this.matchGoalRepository = new SupabaseMatchGoalRepository();
+      }
+      return this.matchGoalRepository;
+    } catch (error) {
+      this.handleInitError(error, "MatchGoalRepository");
     }
-    return this.leagueTeamService;
+  }
+
+  // Service getters
+  static getTeamService(): TeamService {
+    try {
+      if (!this.teamService) {
+        this.teamService = new TeamService(this.getTeamRepository());
+      }
+      return this.teamService;
+    } catch (error) {
+      this.handleInitError(error, "TeamService");
+    }
   }
 
   static getLeagueService(): LeagueService {
-    if (!this.leagueService) {
-      this.leagueService = new LeagueService(
-        this.getLeagueRepository(),
-        this.getMatchService(),
-        this.getLeagueTeamService()
-      );
+    try {
+      if (!this.leagueService) {
+        this.leagueService = new LeagueService(
+          this.getLeagueRepository(),
+          this.getMatchService(),
+          this.getLeagueTeamService()
+        );
+      }
+      return this.leagueService;
+    } catch (error) {
+      this.handleInitError(error, "LeagueService");
     }
-    return this.leagueService;
+  }
+
+  static getMatchService(): MatchService {
+    try {
+      if (!this.matchService) {
+        this.matchService = new MatchService(this.getMatchRepository(), this.getLeagueTeamRepository());
+      }
+      return this.matchService;
+    } catch (error) {
+      this.handleInitError(error, "MatchService");
+    }
   }
 
   static getLocationService(): LocationService {
-    if (!this.locationService) {
-      this.locationService = new LocationService(this.getLocationRepository());
+    try {
+      if (!this.locationService) {
+        this.locationService = new LocationService(this.getLocationRepository());
+      }
+      return this.locationService;
+    } catch (error) {
+      this.handleInitError(error, "LocationService");
     }
-    return this.locationService;
   }
 
-  static getTeamService(): TeamService {
-    if (!this.teamService) {
-      const repository = new InMemoryTeamRepository();
-      this.teamService = new TeamService(repository);
+  static getLeagueTeamService(): LeagueTeamService {
+    try {
+      if (!this.leagueTeamService) {
+        this.leagueTeamService = new LeagueTeamService(this.getLeagueTeamRepository());
+      }
+      return this.leagueTeamService;
+    } catch (error) {
+      this.handleInitError(error, "LeagueTeamService");
     }
-    return this.teamService;
+  }
+
+  static getPlayerService(): PlayerService {
+    try {
+      if (!this.playerService) {
+        this.playerService = new PlayerService(this.getPlayerRepository());
+      }
+      return this.playerService;
+    } catch (error) {
+      this.handleInitError(error, "PlayerService");
+    }
+  }
+
+  static getMatchGoalService(): MatchGoalService {
+    try {
+      if (!this.matchGoalService) {
+        this.matchGoalService = new MatchGoalService(this.getMatchGoalRepository());
+      }
+      return this.matchGoalService;
+    } catch (error) {
+      this.handleInitError(error, "MatchGoalService");
+    }
   }
 }

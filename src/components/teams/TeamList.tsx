@@ -89,9 +89,9 @@ export function TeamList() {
         ))}
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingTeam ? "Edit Team" : "Add Team"}>
+      {/* <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingTeam ? "Edit Team" : "Add Team"}>
         <TeamForm onClose={handleCloseModal} initialData={editingTeam ?? undefined} />
-      </Modal>
+      </Modal> */}
     </div>
   );
 }

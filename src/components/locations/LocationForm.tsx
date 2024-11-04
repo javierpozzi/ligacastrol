@@ -1,41 +1,22 @@
 import { useState } from "react";
-import toast from "react-hot-toast";
-import { RepositoryFactory } from "../../repositories/factory";
-import { useLocations } from "../../hooks/useLocations";
+import { Location } from "../../types";
 
 interface LocationFormProps {
-  onClose: () => void;
-  initialData?: {
-    id: string;
-    name: string;
-    address: string;
-  };
+  initialData?: Location;
+  onSubmit: (data: Omit<Location, "id">) => Promise<void>;
+  onCancel: () => void;
 }
 
-export function LocationForm({ onClose, initialData }: LocationFormProps) {
+export function LocationForm({ initialData, onSubmit, onCancel }: LocationFormProps) {
   const [name, setName] = useState(initialData?.name ?? "");
   const [address, setAddress] = useState(initialData?.address ?? "");
-  const { reloadLocations } = useLocations();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    try {
-      const locationService = RepositoryFactory.getLocationService();
-
-      if (initialData) {
-        await locationService.updateLocation(initialData.id, { name, address });
-        toast.success("Location updated successfully");
-      } else {
-        await locationService.createLocation({ name, address });
-        toast.success("Location created successfully");
-      }
-
-      reloadLocations();
-      onClose();
-    } catch {
-      toast.error(initialData ? "Failed to update location" : "Failed to create location");
-    }
+    await onSubmit({
+      name,
+      address,
+    });
   };
 
   return (
@@ -71,7 +52,7 @@ export function LocationForm({ onClose, initialData }: LocationFormProps) {
       <div className="flex justify-end space-x-3 pt-4">
         <button
           type="button"
-          onClick={onClose}
+          onClick={onCancel}
           className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
         >
           Cancel

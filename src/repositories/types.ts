@@ -1,4 +1,4 @@
-import { Team, League, Match, Location, LeagueTeam } from "../types";
+import { Team, League, Match, Location, LeagueTeam, Player, MatchGoal } from "../types";
 
 export interface Repository<T> {
   getAll(): Promise<T[]>;
@@ -20,4 +20,13 @@ export interface LeagueTeamRepository extends Repository<LeagueTeam> {
   getByLeagueId(leagueId: string): Promise<LeagueTeam[]>;
   getByLeagueAndTeam(leagueId: string, teamId: string): Promise<LeagueTeam | null>;
   getAllTeamsForLeague(leagueId: string): Promise<Team[]>;
+}
+
+export interface PlayerRepository extends Repository<Player> {
+  getByTeamId(teamId: string): Promise<Player[]>;
+}
+
+export interface MatchGoalRepository extends Repository<MatchGoal> {
+  getByMatchId(matchId: string): Promise<MatchGoal[]>;
+  getByLeagueId(leagueId: string): Promise<MatchGoal[]>;
 }

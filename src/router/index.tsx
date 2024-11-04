@@ -1,56 +1,47 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import LeagueList from "../components/leagues/LeagueList";
-import { MatchWeeks } from "../components/leagues/MatchWeeks";
-import MatchEditor from "../components/leagues/MatchEditor";
-import { MainLayout } from "../components/layout/MainLayout";
-import { LeagueTable } from "../components/leagues/LeagueTable";
-import { TeamList } from "../components/teams/TeamList";
 import { LocationList } from "../components/locations/LocationList";
-import { NotFound } from "../components/NotFound";
-import { TeamDetails } from "../components/teams/TeamDetails";
-import { LeagueTopScorers } from "../components/leagues/LeagueTopScorers";
+import { TeamList } from "../components/teams/TeamList";
+import { AdminLayout } from "../layouts/AdminLayout";
+import { PublicLayout } from "../layouts/PublicLayout";
+import { AdminDashboard } from "../pages/admin/Dashboard";
+import { LoginPage } from "../pages/auth/LoginPage";
+import { RegisterPage } from "../pages/auth/RegisterPage";
+import { PublicHome } from "../pages/public/Home";
+import { PublicLeagueDetails } from "../pages/public/LeagueDetails";
+import { PublicLeagues } from "../pages/public/Leagues";
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <MainLayout />,
+    element: <PublicLayout />,
     children: [
-      {
-        path: "/",
-        element: <LeagueList />,
-      },
-      {
-        path: "/teams",
-        element: <TeamList />,
-      },
-      {
-        path: "/locations",
-        element: <LocationList />,
-      },
-      {
-        path: "/league/:leagueId",
-        element: <MatchWeeks />,
-      },
-      {
-        path: "/league/:leagueId/match/:matchId",
-        element: <MatchEditor />,
-      },
-      {
-        path: "/league/:leagueId/standings",
-        element: <LeagueTable />,
-      },
-      {
-        path: "/league/:leagueId/scorers",
-        element: <LeagueTopScorers />,
-      },
-      {
-        path: "/teams/:teamId",
-        element: <TeamDetails />,
-      },
-      {
-        path: "*",
-        element: <NotFound />,
-      },
+      { index: true, element: <PublicHome /> },
+      { path: "leagues", element: <PublicLeagues /> },
+      { path: "leagues/:id", element: <PublicLeagueDetails /> },
     ],
   },
+  {
+    path: "/admin",
+    element: <AdminLayout />,
+    children: [
+      { index: true, element: <AdminDashboard /> },
+      { path: "teams", element: <TeamList /> },
+      { path: "leagues", element: <LeagueList /> },
+      { path: "locations", element: <LocationList /> },
+    ],
+  },
+  //   {
+  //     path: "/admin",
+  //     element: <AdminLayout />,
+  //     children: [
+  //       { index: true, element: <AdminDashboard /> },
+  //       { path: "teams", element: <AdminTeams /> },
+  //       { path: "leagues", element: <AdminLeagues /> },
+  //       { path: "locations", element: <AdminLocations /> },
+  //     ],
+  //   },
+  { path: "/login", element: <LoginPage /> },
+  { path: "/register", element: <RegisterPage /> },
+  { path: "*", element: <Navigate to="/" replace /> },
 ]);

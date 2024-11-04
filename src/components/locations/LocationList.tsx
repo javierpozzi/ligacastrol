@@ -78,9 +78,9 @@ export function LocationList() {
         ))}
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingLocation ? "Edit Location" : "Add Location"}>
+      {/* <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingLocation ? "Edit Location" : "Add Location"}>
         <LocationForm onClose={handleCloseModal} initialData={editingLocation ?? undefined} />
-      </Modal>
+      </Modal> */}
     </div>
   );
 }
